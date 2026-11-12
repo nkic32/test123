@@ -1,0 +1,2743 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>大學四年模擬遊戲 · 星穹紀元版</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --ink: #1a2238;
+  --mu: #5f6c87;
+  --glass: rgba(255,255,255,0.85);
+  --glass2: rgba(255,255,255,0.95);
+  --line: rgba(50,70,120,0.18);
+  --ac: #4f78e3;
+  --acs: #e2ecff;
+  --on: #fff;
+  --gold: #e5a93c;
+  --gold-glow: rgba(229,169,60,0.45);
+  --wine: #c44053;
+  --green: #10b981;
+  --hoyo-dark: #0f172a;
+  --hoyo-gold: #f3c262;
+  --hoyo-blue: #38bdf8;
+  --hoyo-purple: #a855f7;
+  --sh: 0 10px 30px rgba(15,23,42,0.15);
+  --sh-gold: 0 0 20px rgba(243,194,98,0.35);
+  --bg1: #e9f0fc;
+  --bg2: #fcf6eb;
+  --f: "Huninn", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --ink: #e2e8f8;
+    --mu: #94a3b8;
+    --glass: rgba(15,23,42,0.82);
+    --glass2: rgba(30,41,69,0.95);
+    --line: rgba(148,163,184,0.22);
+    --ac: #60a5fa;
+    --acs: rgba(96,165,250,0.22);
+    --on: #0b1120;
+    --sh: 0 12px 32px rgba(0,0,0,0.5);
+    --bg1: #0a0f1d;
+    --bg2: #141b2d;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:400 16px/1.65 var(--f);background:radial-gradient(circle at 50% 20%,var(--bg1),var(--bg2)) fixed;overflow-x:hidden}
+.w{max-width:1280px;margin:0 auto;padding:10px}
+.play .w{max-width:none;padding:0;min-height:100vh;display:flex;align-items:center;justify-content:center}
+.play .top{display:none}
+h1,h2,h3{margin:0 0 6px;font-weight:400;letter-spacing:.08em}
+h1{font-size:26px}h2{font-size:22px}
+
+/* 原神/星鐵風格：科技琉璃卡片與飾角 */
+.panel,.card{
+  background: var(--glass);
+  backdrop-filter: blur(16px) saturate(1.25);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--sh), inset 0 1px 0 rgba(255,255,255,.6);
+  padding: 16px;
+  position: relative;
+}
+.panel::before, .card::before{
+  content: "✦";
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 10px;
+  color: var(--hoyo-gold);
+  opacity: 0.7;
+}
+
+.g{display:grid;gap:14px}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.g4,.g3{grid-template-columns:repeat(2,1fr)}}
+
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+.st{color:var(--mu);font-size:13px}.st b{display:block;font-size:26px;line-height:1.2;color:var(--ink);font-weight:400}
+.st .ic,.chip .ic{width:30px;height:30px;padding:6px;border-radius:50%;background:var(--c);color:#2a3350}
+.k{--c:#a9c8ff}.m{--c:#f3d98d}.sk{--c:#f3b3c0}.h{--c:#9fdcc2}.st-p{--c:#ffb3ba}
+
+/* 米哈遊風格斜切角流光按鈕 */
+button{
+  font:inherit;
+  color:var(--ink);
+  background:var(--glass2);
+  border:1px solid var(--line);
+  border-left:4px solid var(--ac);
+  border-radius:8px 14px 8px 14px;
+  box-shadow:0 3px 10px rgba(15,23,42,0.1);
+  padding:10px 16px;
+  cursor:pointer;
+  text-align:left;
+  transition:transform .18s cubic-bezier(.2,.8,.2,1),background .18s,box-shadow .18s;
+  position:relative;
+  overflow:hidden;
+}
+button:not(.pin):hover:not(:disabled){
+  background:var(--acs);
+  box-shadow:0 6px 18px rgba(96,165,250,0.25);
+  transform:translateY(-2px);
+}
+button:not(.pin):active:not(:disabled){
+  box-shadow:0 1px 4px rgba(15,23,42,0.2);
+  transform:translateY(0) scale(0.98);
+}
+/* Fix for .sel-go hover to prevent drift */
+.sel-go:hover:not(:disabled){
+    transform:scale(1.02)!important;
+    filter:brightness(1.03)!important;
+}
+/* 按鈕掃光效果 (Shimmer) */
+button::after{
+  content:"";
+  position:absolute;
+  top:-50%;
+  left:-60%;
+  width:40%;
+  height:200%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent);
+  transform:rotate(25deg);
+  transition:none;
+}
+button:hover::after{
+  left:130%;
+  transition:left .65s ease-in-out;
+}
+button:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+
+.pri{
+  background: linear-gradient(135deg, var(--ac), #3b82f6);
+  color: var(--on);
+  border-color: transparent;
+  text-align: center;
+  font-size: 18px;
+  letter-spacing: .12em;
+  border-radius: 12px 20px 12px 20px;
+  font-weight: bold;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+}
+button.pri:not(.pin):hover:not(:disabled){
+  filter: brightness(1.12);
+  box-shadow: 0 6px 22px rgba(59,130,246,0.5);
+}
+.hint{display:inline-block;margin-left:6px;padding:0 10px;font-size:12px;line-height:1.7;color:var(--ink);background:var(--acs);border:1px solid var(--line);border-radius:99px}
+.mu{color:var(--mu);font-size:14px}
+
+.portrait{position:relative;aspect-ratio:1195/1600;width:100%}
+.portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0}
+.hid{display:none!important}
+
+/* 舞台系統 (1280x714 自適應比例) */
+.stage{position:relative;width:100%;height:100%;margin:0 auto;overflow:hidden;background:var(--bg1)}
+#game{position:relative;width:1280px;height:714px;zoom:var(--s,1);overflow:hidden;border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:filter .8s}
+.stage[data-t=dusk]:not([data-real="1"]) .bg{filter:sepia(.45) saturate(1.5) hue-rotate(-18deg) brightness(.92)}
+.stage[data-t=night]:not([data-real="1"]) .bg{filter:brightness(.55) saturate(.9) hue-rotate(185deg)}
+.bg.dim{filter:blur(8px) brightness(.85);transform:scale(1.06)}
+.stage>.portrait{position:absolute;z-index:1;filter:drop-shadow(0 12px 18px rgba(10,15,30,.35))}
+.pl{left:1%;bottom:0;width:14%;pointer-events:none}
+
+/* 原神/星鐵風 HUD 頂部導航列 */
+.hud{position:absolute;z-index:3;top:2.5%}
+.tl{left:1.5%;display:flex;gap:10px;align-items:flex-start}
+.tr{
+  right:1.5%;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:6px 14px;
+  background:var(--glass);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--line);
+  border-radius:99px;
+  box-shadow:var(--sh);
+}
+.tr{right:64px;}
+.cal{
+  width:72px;
+  flex:none;
+  overflow:hidden;
+  text-align:center;
+  line-height:1;
+  background:var(--glass2);
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:var(--sh);
+  position:relative;
+}
+.cal::before{content:"";display:block;height:16px;background:linear-gradient(90deg,var(--ac),var(--hoyo-gold))}
+.cal span{display:block;margin-top:8px;font-size:32px;font-weight:bold;color:var(--ink)}
+.cal small{display:block;margin:2px 0 8px;font-size:12px;color:var(--mu);letter-spacing:1px}
+.cal.flip{animation:flip .5s cubic-bezier(.2,.9,.3,1.2);transform-origin:top}
+@keyframes flip{from{transform:rotateX(-80deg);opacity:.2}to{transform:none;opacity:1}}
+
+.chips{display:grid;grid-template-columns:repeat(2,auto);gap:6px}
+.chip{display:flex;align-items:center;gap:6px;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:99px;box-shadow:0 4px 12px rgba(15,23,42,.1);padding:3px 14px 3px 4px;font-size:13px}
+.chip .ic{width:26px;height:26px;padding:5px}.chip b{font-size:17px;font-weight:400}
+.en{display:flex;gap:3px}.en i{width:8px;height:20px;border-radius:4px;background:linear-gradient(180deg,var(--hoyo-blue),var(--ac));transition:background .2s}.en i.off{background:var(--line);opacity:0.35}
+.en i:not(.off):last-child{animation:pulseBolt 1.2s infinite ease-in-out}
+@keyframes pulseBolt{0%,100%{filter:brightness(1)}50%{filter:brightness(1.6);box-shadow:0 0 8px var(--hoyo-blue)}}
+
+/* 頂部快捷按鈕 */
+.hud-btns{display:flex;gap:6px;margin-left:6px}
+.hud-btn{
+  padding:6px 14px;
+  border-radius:99px;
+  font-size:13px;
+  border:1px solid var(--line);
+  border-left:3px solid var(--hoyo-gold);
+  display:flex;
+  align-items:center;
+  gap:5px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  background:var(--glass2);
+  font-weight:bold;
+}
+
+/* 跑馬燈 (時事情報委託) */
+.news-bar{
+  position:absolute;
+  z-index:3;
+  top:2.5%;
+  left:50%;
+  transform:translateX(-50%);
+  max-width:460px;
+  background:var(--glass);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line);
+  border-radius:99px;
+  box-shadow:var(--sh);
+  padding:5px 20px;
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border-top:1px solid rgba(255,255,255,0.7);
+}
+.news-bar::before{content:"✦";color:var(--hoyo-gold);font-size:12px}
+
+.toast{position:absolute;z-index:3;left:50%;bottom:2.5%;transform:translateX(-50%);max-width:60%;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:99px;box-shadow:var(--sh);padding:6px 24px;font-size:15px;pointer-events:none}
+#log{transition:opacity .2s,transform .2s}
+#log.pop{opacity:0.8;transform:translate(-50%, -6px)}
+
+/* 原神傳送錨點風格 Pin (Waypoints) */
+.pin{all:unset;position:absolute;z-index:2;transform:translate(-50%,-23px);cursor:pointer;text-align:center}
+.pin .dot{
+  position:relative;
+  display:grid;
+  place-items:center;
+  width:50px;
+  height:50px;
+  margin:0 auto;
+  background:radial-gradient(circle, var(--glass2) 60%, rgba(255,255,255,0.9));
+  color:var(--ac);
+  border:2.5px solid #fff;
+  border-radius:50%;
+  box-shadow:0 6px 18px rgba(15,23,42,.35), inset 0 0 8px rgba(79,120,227,0.3);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1);
+}
+.pin:hover .dot,.pin:focus-visible .dot{transform:scale(1.18);box-shadow:0 0 22px var(--hoyo-blue)}
+.pin:focus-visible .tag{outline:2px solid var(--ac)}
+/* 錨點向上光柱 */
+.pin .ring{
+  pointer-events:none;
+  position:absolute;
+  left:50%;
+  top:0;
+  width:50px;
+  height:50px;
+  margin-left:-25px;
+  border-radius:50%;
+  border:2px solid #fff;
+  box-shadow:0 0 16px var(--hoyo-blue);
+  animation:hoyoPulse 2.2s ease-out infinite;
+}
+@keyframes hoyoPulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(2);opacity:0}}
+
+.pin .tag{
+  display:block;
+  margin-top:7px;
+  padding:2px 14px;
+  background:var(--glass);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:99px;
+  font-size:13px;
+  white-space:nowrap;
+  line-height:1.4;
+  box-shadow:0 4px 10px rgba(0,0,0,0.12);
+  font-weight:500;
+}
+.pin .tag small{display:block;font-size:11px;color:var(--mu)}
+.pin.off{opacity:.42;cursor:not-allowed}.pin.off .ring{display:none}
+.pin[data-k=end] .dot{background:radial-gradient(circle, var(--gold) 40%, #d97706);color:#fff;box-shadow:0 0 16px var(--gold-glow)}
+.pin[data-k=shop] .dot{background:radial-gradient(circle, #10b981 40%, #059669);color:#fff}
+.pin.burst .dot{animation:burstDot .5s}
+.pin.burst .ring{animation:burstRing .5s}
+@keyframes burstDot{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+@keyframes burstRing{0%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:0.8}100%{transform:scale(2.2);opacity:0}}
+
+/* 原神風格委託詳情 Tooltip (Commission Details) */
+.tip{
+  position:absolute;
+  z-index:4;
+  width:230px;
+  transform:translate(-50%,calc(-100% - 40px));
+  background:var(--glass2);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--hoyo-gold);
+  border-radius:14px;
+  box-shadow:var(--sh-gold);
+  padding:12px 16px;
+  font-size:13px;
+  pointer-events:none;
+}
+.tip b{font-weight:bold;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:4px}
+.tip b::before{content:"✦";color:var(--hoyo-gold);font-size:12px}
+.tip.below{transform:translate(-50%,80px)}
+
+/* 原神風格視覺小說對話框 (Dialogue Cutscene) */
+.vl{left:2%;bottom:-3%;width:30%}.vr{right:2%;bottom:-3%;width:30%}
+.vn{
+  position:absolute;
+  z-index:5;
+  left:4%;
+  right:4%;
+  bottom:3%;
+  min-height:28%;
+  background:linear-gradient(180deg, rgba(15,23,42,0.88), rgba(20,30,58,0.96));
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(243,194,98,0.35);
+  border-radius:20px;
+  box-shadow:0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+  padding:28px 34px 20px;
+  cursor:pointer;
+  color:#f8fafc;
+}
+.vn p{margin:0;font-size:20px;min-height:3.2em;white-space:pre-wrap;letter-spacing:0.04em}
+.nm{
+  position:absolute;
+  top:-18px;
+  left:28px;
+  background:linear-gradient(135deg, var(--hoyo-gold), #d97706);
+  color:#0f172a;
+  padding:3px 28px 3px 18px;
+  clip-path:polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  letter-spacing:.12em;
+  font-weight:900;
+  font-size:15px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+}
+.nm::before{content:"✦ ";font-size:12px}
+.vn-continue{position:absolute;bottom:12px;right:24px;font-size:13px;color:var(--hoyo-gold);opacity:0.8;animation:blinkIndicator 1.4s infinite}
+@keyframes blinkIndicator{0%,100%{opacity:0.3}50%{opacity:1}}
+
+/* 原神對話選項 (右箭頭 + 滑動效果) */
+.opts{position:absolute;left:20%;width:60%;bottom:calc(100% + 14px);display:grid;gap:10px}
+.opts button{
+  background:linear-gradient(90deg, rgba(15,23,42,0.9), rgba(30,41,69,0.92));
+  color:#f8fafc;
+  border:1px solid rgba(243,194,98,0.3);
+  border-left:4px solid var(--hoyo-gold);
+  border-radius:8px 18px 8px 18px;
+  padding:12px 20px;
+  font-size:15px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:0 4px 16px rgba(0,0,0,0.35);
+}
+.opts button:hover{
+  background:linear-gradient(90deg, rgba(30,41,69,0.95), rgba(79,120,227,0.45));
+  border-color:var(--hoyo-gold);
+  transform:translateX(8px);
+  box-shadow:0 6px 20px rgba(243,194,98,0.25);
+}
+.opts button::after{content:"›";font-size:22px;color:var(--hoyo-gold);font-weight:bold}
+
+/* 開局選角畫面 */
+.sel-title{position:absolute;z-index:3;top:3%;left:50%;transform:translateX(-50%);text-align:center;padding:8px 40px;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:24px;box-shadow:var(--sh)}
+.sel-title h1{font-size:32px;margin:0;font-weight:bold;letter-spacing:0.1em}
+.sel-title p{margin:0;color:var(--mu);font-size:14px;letter-spacing:.2em}
+.sel-pick{position:absolute;z-index:1;bottom:0;width:24%;filter:drop-shadow(0 10px 14px rgba(10,15,30,.35));cursor:pointer;transform-origin:50% 100%;transition:transform .25s,filter .25s}
+.sel-m{left:5%}.sel-f{right:5%}
+.sel-pick.on{transform:scale(1.05)}
+.sel-pick.dim{filter:brightness(.65) saturate(.75)}
+.sel-pick.sel{filter:drop-shadow(0 0 16px var(--ac)) drop-shadow(0 0 6px var(--hoyo-gold))}
+
+.sel-info{position:absolute;z-index:3;bottom:4%;width:22%;padding:12px 18px;display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--mu);background:var(--glass2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh);cursor:pointer}
+.sel-info b{font-size:17px;font-weight:bold;color:var(--ink)}
+.sel-im{left:6%}.sel-if{right:6%}
+.sel-info.sel{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac),var(--sh)}
+.sel-info.sel::after{content:"";position:absolute;top:10px;right:12px;width:20px;height:20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f78e3' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/contain no-repeat}
+
+/* 中央引導與客製化檔案 */
+.sel-guide{position:absolute;z-index:3;top:18%;left:50%;transform:translateX(-50%);width:42%;padding:16px 24px;background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh);font-size:14px;line-height:1.7}
+.sel-guide .rules{color:var(--mu);margin-bottom:12px;border-bottom:1px dashed var(--line);padding-bottom:10px}
+.f-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+.f-row label{width:68px;flex:none;color:var(--mu);font-weight:bold}
+.f-row input,.f-row select{flex:1;font:inherit;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--glass2);color:var(--ink)}
+.f-btns{display:flex;gap:5px;flex:1}
+.f-btn{flex:1;text-align:center;padding:5px 2px;font-size:12px;border-left:1px solid var(--line);border-radius:8px;background:var(--glass2)}
+.f-btn.active{background:var(--ac);color:var(--on);border-color:var(--ac);box-shadow:0 2px 8px rgba(79,120,227,.4)}
+
+.sel-go {
+  position: fixed !important;
+  top: auto !important;      /* 強制解除原本可能存在的 top 定位 */
+  bottom: 10% !important;     /* 強制貼齊視窗底部 */
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  padding: 16px 80px;
+  font-size: 20px;
+  white-space: nowrap;
+}
+
+/* 浮動變化數值 (RPG 飄字) */
+.float{position:absolute;z-index:6;pointer-events:none;transform:translate(-50%,0);padding:3px 14px;border-radius:99px;font-size:15px;white-space:nowrap;background:var(--glass2);border:1px solid var(--line);box-shadow:var(--sh);animation:floatUp 1.2s ease-out forwards;font-weight:bold}
+@keyframes floatUp{from{opacity:0;transform:translate(-50%,0)}15%{opacity:1}to{opacity:0;transform:translate(-50%,-65px)}}
+
+/* 音量按鈕 */
+.audio-toggle{position:absolute;z-index:30;top:12px;right:12px;width:40px;height:40px;padding:0;display:grid;place-items:center;border-radius:50%;}
+
+/* 寵物貓咪小窩 (星鐵帳帳/撲滿風格) */
+.pet-shelter{position:absolute;z-index:3;bottom:12px;right:16px;display:flex;align-items:center;gap:8px;background:var(--glass);padding:6px 16px;border-radius:99px;border:1px solid var(--hoyo-gold);box-shadow:var(--sh-gold);cursor:pointer;transition:transform .2s}
+.pet-shelter:hover{transform:scale(1.08)}
+.pet-avatar{font-size:26px;animation:catWiggle 3s infinite ease-in-out}
+@keyframes catWiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.pet-status{font-size:12px;line-height:1.2;color:var(--ink)}
+.pet-status b{color:var(--hoyo-gold)}
+
+/* 彈窗遮罩與卡片 (米哈遊星核彈窗) */
+.modal-layer{position:absolute;inset:0;z-index:20;background:rgba(10,15,30,0.75);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center}
+.modal-card{width:90%;max-width:640px;background:var(--glass2);border:1px solid var(--hoyo-gold);border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);padding:26px;text-align:center;position:relative}
+.modal-close{position:absolute;top:14px;right:16px;border:none;background:none;font-size:22px;cursor:pointer;color:var(--mu)}
+
+/* 崩鐵「躍遷 (WARP)」抽卡天賦選項 (3選1卡牌) */
+.gacha-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}
+.gacha-card{
+  background:linear-gradient(180deg, var(--glass2), rgba(255,255,255,0.8));
+  border:2px solid var(--line);
+  border-radius:18px;
+  padding:18px 12px;
+  cursor:pointer;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s,box-shadow .22s;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-between;
+  min-height:205px;
+  position:relative;
+  overflow:hidden;
+}
+.gacha-card:hover{
+  transform:translateY(-8px) scale(1.03);
+  border-color:var(--hoyo-gold);
+  box-shadow:0 14px 32px var(--gold-glow);
+}
+.gacha-card.ssr{
+  border-color:var(--hoyo-gold);
+  background:linear-gradient(180deg, rgba(243,194,98,0.22), var(--glass2));
+  box-shadow:0 0 16px rgba(243,194,98,0.3);
+}
+.gacha-badge{font-size:11px;padding:3px 10px;border-radius:99px;background:var(--ac);color:#fff;margin-bottom:6px;font-weight:bold}
+.gacha-card.ssr .gacha-badge{background:linear-gradient(90deg, #d97706, var(--hoyo-gold));color:#000}
+.gacha-stars{color:var(--hoyo-gold);font-size:13px;letter-spacing:1px}
+
+/* 星鐵格狀道具背包 (Inventory Item Grid) */
+.shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:18px 0}
+.shop-item{
+  background:var(--glass);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  text-align:left;
+  position:relative;
+}
+.shop-item.r3{border-left:5px solid var(--hoyo-blue)}
+.shop-item.r4{border-left:5px solid var(--hoyo-purple)}
+.shop-item.r5{border-left:5px solid var(--hoyo-gold);box-shadow:0 0 12px rgba(243,194,98,0.2)}
+
+/* 刮刮樂發票 */
+.lottery-box{background:linear-gradient(135deg,#fee2e2,#fef3c7);border:2px dashed #f87171;border-radius:18px;padding:22px;margin:16px 0;color:#991b1b}
+.lottery-num{font-size:36px;font-weight:900;letter-spacing:4px;margin:12px 0;color:#b91c1c}
+
+/* ─── 米哈遊極致打磨：原神 / 星鐵風格擴充樣式 ─── */
+.warp-canvas {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* 原神風格暴擊傷害飄字 (Genshin CRIT!) */
+.crit-text {
+  position: absolute;
+  font-family: 'Huninn', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: #fbbf24;
+  text-shadow: 0 0 12px rgba(251,191,36,0.95), 0 0 24px rgba(245,158,11,0.7), 0 2px 4px #000;
+  animation: critBurst 1.25s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  pointer-events: none;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.crit-badge {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 10px rgba(245,158,11,0.9);
+  text-shadow: none;
+}
+@keyframes critBurst {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  20% { transform: translate(-50%, -85%) scale(1.4); opacity: 1; }
+  45% { transform: translate(-50%, -75%) scale(1.15); opacity: 1; }
+  100% { transform: translate(-50%, -130%) scale(0.9); opacity: 0; }
+}
+
+/* 原神烹飪 / 工讀 QTE 判定條樣式 */
+.qte-modal {
+  text-align: center;
+  padding: 10px 0;
+  color: #f1f5f9;
+}
+.qte-title {
+  font-size: 22px;
+  color: var(--hoyo-gold);
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+.qte-scene {
+  font-size: 13px;
+  color: var(--mu);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.qte-track-wrap {
+  position: relative;
+  width: 90%;
+  max-width: 440px;
+  height: 38px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 2px solid rgba(255,255,255,0.25);
+  border-radius: 20px;
+  margin: 20px auto 26px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.7), 0 0 16px rgba(252,211,77,0.25);
+  overflow: visible;
+}
+.qte-zone-great {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: rgba(251, 191, 36, 0.35);
+  border-left: 2px solid #fbbf24;
+  border-right: 2px solid #fbbf24;
+}
+.qte-zone-perfect {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.85), rgba(252, 211, 77, 0.95));
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.95);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: #1e1b4b;
+  letter-spacing: 1px;
+}
+.qte-cursor {
+  position: absolute;
+  top: -8px;
+  width: 14px;
+  height: 54px;
+  background: #ffffff;
+  border: 2px solid #38bdf8;
+  border-radius: 7px;
+  box-shadow: 0 0 14px #38bdf8, 0 0 24px rgba(56, 189, 248, 0.9);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 10;
+}
+.qte-hit-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 12px 36px;
+  border-radius: 24px;
+  border: 2px solid #fef3c7;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.5);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.qte-hit-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+/* 主角星軌共鳴環與 Buff 狀態欄 */
+.char-halo {
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  border: 2px dashed rgba(252, 211, 77, 0.4);
+  box-shadow: 0 0 25px rgba(252, 211, 77, 0.25);
+  bottom: 8px;
+  left: 20px;
+  pointer-events: none;
+  animation: haloSpin 20s linear infinite;
+  z-index: 2;
+}
+@keyframes haloSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.status-cloud {
+  position: absolute;
+  bottom: 220px;
+  left: 45px;
+  font-size: 24px;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+  animation: cloudShake 1.5s ease-in-out infinite alternate;
+  z-index: 10;
+  pointer-events: none;
+}
+@keyframes cloudShake {
+  0% { transform: translateY(0) rotate(-4deg); }
+  100% { transform: translateY(-6px) rotate(4deg); }
+}
+.talent-tray {
+  position: absolute;
+  bottom: 236px;
+  left: 10px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+.talent-badge {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1.5px solid var(--hoyo-gold);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.talent-badge:hover {
+  transform: scale(1.15);
+  border-color: #fff;
+}
+
+/* 原神風格對話框右上角控制列 */
+.vn-controls {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+}
+.vn-ctrl-btn {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+}
+.vn-ctrl-btn:hover {
+  background: rgba(252, 211, 77, 0.25);
+  border-color: var(--hoyo-gold);
+  color: var(--hoyo-gold);
+}
+.vn-log-layer {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(11, 14, 23, 0.94);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  padding: 32px 40px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  color: #f1f5f9;
+}
+.vn-log-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 22px;
+  cursor: pointer;
+}
+.vn-log-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.vn-log-item b {
+  color: var(--hoyo-gold);
+  margin-right: 8px;
+}
+
+
+/* 傳送錨點聲納脈衝光環 (Teleport Sonar Pulse) */
+.pin .dot::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(251, 191, 36, 0.6);
+  animation: pinSonar 2.2s infinite ease-out;
+  pointer-events: none;
+}
+@keyframes pinSonar {
+  0% { transform: scale(0.95); opacity: 0.85; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+.pin:hover .dot {
+  transform: scale(1.18) translateY(-4px);
+  border-color: var(--hoyo-gold) !important;
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.8), 0 0 35px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* 星鐵風格命運能量晶體 (Energy Shards) */
+.en i {
+  display: inline-block;
+  width: 9px;
+  height: 16px;
+  background: linear-gradient(180deg, #38bdf8, #0284c7);
+  margin: 0 2px;
+  border-radius: 2px;
+  transform: skewX(-15deg);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.en i.off {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+/* Disabled button styling */
+button:disabled,
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none;
+}
+button:disabled:hover,
+button[disabled]:hover {
+  background: var(--glass2) !important;
+}
+button:disabled::after,
+button[disabled]::after {
+  animation: none;
+  opacity: 0.4;
+}
+
+/* Genshin-inspired gold shimmer for primary buttons */
+.pri::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(243,194,98,0.4) 50%,
+    transparent 70%
+  );
+  animation: shine 2s infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+@keyframes shine {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+/* Ensure .pri buttons have position relative for pseudo */
+.pri { position: relative; }
+
+
+/* Fix for button hover issues */
+button:not(.pin):hover:not(:disabled){
+   background:rgba(226,236,255,0.7) !important; /* Toned down --acs */
+   box-shadow:0 4px 12px rgba(96,165,250,0.15) !important;
+   transform:scale(1.02) !important; /* Scale instead of translate to prevent "running away" */
+}
+button.pri:not(.pin):hover:not(:disabled){
+   filter:brightness(1.03) !important; /* Further reduced brightness */
+   box-shadow:0 4px 12px rgba(59,130,246,0.2) !important;
+}
+/* Reduce shimmer intensity */
+button::after{
+   background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent) !important; /* Reduced from 0.35 */
+}
+button:hover::after{
+   left:130% !important;
+   transition:left .65s ease-in-out !important;
+}
+/* Ensure text stays visible */
+button:not(.pin):hover:not(:disabled),
+button.pri:not(.pin):hover:not(:disabled){
+   color:var(--on) !important;
+}
+/* Genshin/HSR visual polish */
+.pri:hover:not(:disabled){
+    filter:brightness(1.03)!important;
+    box-shadow:0 0 0 2px rgba(233,191,91,0.4), 0 4px 12px rgba(96,165,250,0.15)!important;
+    border-color:var(--gold)!important;
+}
+.sel-go:hover:not(:disabled){
+    box-shadow:0 0 0 2px rgba(233,191,91,0.5), 0 4px 12px rgba(96,165,250,0.2)!important;
+    border-color:var(--gold)!important;
+}
+.sel-guide input:focus,.sel-guide select:focus{
+    border-color:var(--gold)!important;
+    box-shadow:0 0 0 2px rgba(233,191,91,0.3)!important;
+}
+
+/* Gold shimmer refinement */
+button::after{
+    background:linear-gradient(90deg,transparent,rgba(255,215,0,0.2),transparent) !important; /* gold shimmer */
+}
+button:hover::after{
+    left:130% !important;
+    transition:left .8s ease-in-out !important;
+}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&display=swap">
+</head>
+<body class="play">
+
+<div class="w">
+<div id="game">
+  <!-- 全螢幕原神/星鐵躍遷祈願 Canvas -->
+  <canvas id="warp-canvas" class="warp-canvas hid"></canvas>
+  <!-- 聲音切換開關 (右上角) -->
+  <button id="sfxBtn" class="audio-toggle"></button>
+
+  <!-- 1. 開局選角設定畫面 (米家風極簡大氣) -->
+  <div id="s-start" class="stage">
+    <img class="bg dim" alt="" src="assets/school_map.webp">
+    <div class="sel-title">
+      <h1>大學四年模擬遊戲</h1>
+      <p>✦ FRESHMAN ARCHIVE · 命運躍遷 · 萌寵陪伴 ✦</p>
+    </div>
+    
+    <!-- 男女主角立繪選擇 -->
+    <div class="sel-pick sel-m" id="pick-male"><div id="sp-male" class="portrait"></div></div>
+    <div class="sel-pick sel-f" id="pick-female"><div id="sp-female" class="portrait"></div></div>
+    <div class="sel-info sel-im"><b>男主角</b><span>對一切都充滿好奇的新生，等著開啟他的大學生活。</span></div>
+    <div class="sel-info sel-if"><b>女主角</b><span>個性溫和、做事認真的新生，總是背著大大的書包。</span></div>
+
+    <!-- 原版引導卡片 (sel-guide) + 整合新生自訂欄位 -->
+    <div class="sel-guide">
+      <div class="rules">
+        <div>✦ 每月 10 點體力，點擊校園地標傳送點安排行動委託。</div>
+        <div>✦ 月底將解鎖隨機事件與發票躍遷對獎，打造專屬結局！</div>
+      </div>
+      <div class="f-row">
+        <label>拓荒者姓名</label>
+        <input type="text" id="inp-name" value="新生同學" maxlength="10">
+      </div>
+      <div class="f-row">
+        <label>入學學系</label>
+        <select id="inp-major" style="flex:1;">
+          <option value="cs">資訊學院 (演算法/網路架構/程式設計)</option>
+          <option value="eng">工學院 (機械力學/電路分析/工程材料)</option>
+          <option value="biz">管理學院 (SWOT分析/財務會計/市場行銷)</option>
+          <option value="arts">文學院 (美學理論/劇作鑑賞/文史哲思)</option>
+          <option value="med">醫護學院 (解剖生理/急救甦醒/公共衛生)</option>
+          <option value="soc">社科院 (心理諮商/總體經濟/法政制度)</option>
+        </select>
+      </div>
+      <div class="f-row">
+        <label>家庭資產</label>
+        <div class="f-btns" id="grp-wealth">
+          <button class="f-btn" data-v="poor">清寒<br><small>$5,000</small></button>
+          <button class="f-btn active" data-v="middle">小康<br><small>$15,000</small></button>
+          <button class="f-btn" data-v="rich">富裕<br><small>$40,000</small></button>
+        </div>
+      </div>
+      <div class="f-row">
+        <label>開局天賦</label>
+        <div class="f-btns" id="grp-pers">
+          <button class="f-btn active" data-v="outgoing">外向<br><small>社交加成</small></button>
+          <button class="f-btn" data-v="hardworker">拚命<br><small>學業工讀↑</small></button>
+          <button class="f-btn" data-v="chill">佛系<br><small>抗壓提升</small></button>
+          <button class="f-btn" data-v="dreamer">夢想家<br><small>技能成長</small></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 原版醒目的開始遊戲大按鈕 -->
+    <button id="startBtn" class="pri sel-go">開啟校園生活 ✦</button>
+  </div>
+
+  <!-- 2. 回合校園地圖畫面 (傳送錨點 Pin 100% 渲染) -->
+  <div id="s-turn" class="stage hid" data-t="day">
+    <img id="bg" class="bg" alt="" src="assets/school_map.webp">
+    
+    <!-- 地圖錨點 Pin 容器 -->
+    <div id="pins"></div>
+    
+    <!-- 左上日曆牌與數值晶片 -->
+    <div class="hud tl">
+      <div class="cal" id="cal"><span id="mon">9</span><small>MONTH</small></div>
+      <div id="stats" class="chips"></div>
+    </div>
+    
+    <!-- 頂部即時新聞跑馬燈 (校園時事情報) -->
+    <div class="news-bar" id="news-bar">✦ 【校園時事情報】開學季開跑！好好安排大一生活吧。</div>
+
+    <!-- 右上體力指示燈條與星鐵風導航按鈕 -->
+    <div class="hud tr" id="bar-wrap">
+      <div id="bar"></div>
+      <div class="hud-btns">
+        <button class="hud-btn" id="btn-buff" title="查看當前命運天賦">✦ 天賦</button>
+        <button class="hud-btn" id="btn-bag" title="開啟隨身背包">🎒 道具</button>
+      </div>
+    </div>
+    
+    <!-- 左下動態主角立繪 -->
+    <div id="pp" class="portrait pl"></div>
+    <div class="char-halo"></div>
+    <div id="status-cloud" class="status-cloud hid">✦</div>
+    <div id="talent-tray" class="talent-tray"></div>
+    
+    <!-- 底部動態日誌 Toast -->
+    <div id="log" class="toast"></div>
+    <div id="tip" class="tip hid"></div>
+
+    <!-- 右下角咪寶小窩 (星鐵撲滿寵物互動) -->
+    <div class="pet-shelter" id="pet-box">
+      <div class="pet-avatar">🐱</div>
+      <div class="pet-status">
+        <b id="pet-name">咪寶 (Lv.1)</b><br>
+        <span id="pet-tip">✦ 點擊撫摸/餵食</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 原神風視覺小說對話 / 事件卡片 (沉浸式星空黑金對話框) -->
+  <div id="s-card" class="stage hid">
+    <img class="bg dim" alt="" src="assets/school_map.webp">
+    <div id="cp" class="portrait vl"></div>
+    <div id="np" class="portrait vr"></div>
+    <div class="vn" id="vn">
+      <div class="vn-controls">
+        <button class="vn-ctrl-btn" id="vn-btn-log" title="歷史對話">📜 歷史</button>
+        <button class="vn-ctrl-btn" id="vn-btn-auto" title="自動播放">⏩ 自動</button>
+        <button class="vn-ctrl-btn" id="vn-btn-hide" title="隱藏介面">👁️ 隱藏</button>
+      </div>
+      <div class="nm" id="ct"></div>
+      <p id="cx"></p>
+      <div class="vn-continue">✦ 點擊繼續...</div>
+      <div id="cb" class="opts hid"></div>
+    </div>
+    <!-- 對話歷史紀錄層 -->
+    <div id="vn-log-layer" class="vn-log-layer hid"><button class="vn-log-close" id="vn-log-close">✕</button><div id="vn-log-content"></div></div>
+  </div>
+
+  <!-- 4. 星鐵風格結算通關畫面 -->
+  <div id="s-end" class="stage hid" style="padding:24px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <div id="end-box" class="card" style="width:100%;max-width:840px;text-align:center;border-color:var(--hoyo-gold);"></div>
+  </div>
+
+  <!-- 5. 全局通用彈窗層 (WARP 躍遷天賦、背包、發票彩蛋) -->
+  <div id="modal-layer" class="modal-layer hid">
+    <div class="modal-card" id="modal-card">
+      <button class="modal-close" id="modal-close">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const setHTML=(id,h)=>{const e=$(id);if(e)e.innerHTML=h};
+const cl=(v,a=0,b=100)=>Math.max(a,Math.min(b,v));
+
+// ─── Web Audio API 原生音效系統 (米家結晶/躍遷感升級) ─────────
+const SFX = {
+  ctx: null,
+  enabled: true,
+  init() {
+    try {
+      if (!this.ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    } catch(e) {
+      this.enabled = false;
+    }
+  },
+  play(type) {
+    if (!this.enabled) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    switch(type) {
+      case 'click': {
+        // 原神清脆結晶點擊音 (Crystal click)
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.setValueAtTime(1046.5, now);
+        osc.frequency.exponentialRampToValueAtTime(1567.98, now + 0.04);
+        g.gain.setValueAtTime(0.12, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.05);
+        break;
+      }
+      case 'coin': {
+        // 金幣收穫水晶音
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.setValueAtTime(1318.5, now);
+        osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.15);
+        g.gain.setValueAtTime(0.12, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.15);
+        break;
+      }
+      case 'success': {
+        // 上行三連音階
+        [587.33, 739.99, 880.0].forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.frequency.setValueAtTime(f, now + i * 0.08);
+          g.gain.setValueAtTime(0.1, now + i * 0.08);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.12);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.12);
+        });
+        break;
+      }
+      case 'great': {
+        // 原神/星鐵五星出金音效 (Gold Warp Resonance)
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.frequency.setValueAtTime(f, now + i * 0.06);
+          g.gain.setValueAtTime(0.12, now + i * 0.06);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.28);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(now + i * 0.06); osc.stop(now + i * 0.06 + 0.3);
+        });
+        break;
+      }
+      case 'fail': {
+        [329.63, 246.94].forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, now + i * 0.12);
+          g.gain.setValueAtTime(0.08, now + i * 0.12);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.14);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(now + i * 0.12); osc.stop(now + i * 0.12 + 0.15);
+        });
+        break;
+      }
+      case 'ding': {
+        // 任務接受/事件解鎖叮咚 (Quest chime)
+        [987.77, 1479.98].forEach(f => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.frequency.setValueAtTime(f, now);
+          g.gain.setValueAtTime(0.08, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(now); osc.stop(now + 0.26);
+        });
+        break;
+      }
+      case 'flip': {
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for(let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.15;
+        const src = ctx.createBufferSource();
+        const g = ctx.createGain();
+        src.buffer = buf;
+        g.gain.setValueAtTime(0.12, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        src.connect(g).connect(ctx.destination);
+        src.start(now);
+        break;
+      }
+      case 'meow': {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.setValueAtTime(680, now);
+        osc.frequency.exponentialRampToValueAtTime(950, now + 0.12);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.35);
+        g.gain.setValueAtTime(0.12, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.36);
+        break;
+      }
+      case 'gacha': {
+        // 星鐵躍遷啟動音
+        [440, 554, 659, 880, 1108, 1318].forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.frequency.setValueAtTime(f, now + i * 0.05);
+          g.gain.setValueAtTime(0.09, now + i * 0.05);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.28);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(now + i * 0.05); osc.stop(now + i * 0.05 + 0.3);
+        });
+        break;
+      }
+      case 'crit': {
+        // 原神暴擊敲擊金光聲 (Sharp attack transient + resonant shimmer)
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.exponentialRampToValueAtTime(1760, now + 0.08);
+        g.gain.setValueAtTime(0.2, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.18);
+
+        [1318.5, 2093.0].forEach((f, idx) => {
+          const o2 = ctx.createOscillator();
+          const g2 = ctx.createGain();
+          o2.frequency.setValueAtTime(f, now + idx * 0.03);
+          g2.gain.setValueAtTime(0.12, now + idx * 0.03);
+          g2.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.03 + 0.22);
+          o2.connect(g2).connect(ctx.destination);
+          o2.start(now + idx * 0.03); o2.stop(now + idx * 0.03 + 0.23);
+        });
+        break;
+      }
+      case 'warp_start': {
+        // 星鐵躍遷低頻呼嘯 (Bass wormhole swell)
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(120, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.7);
+        g.gain.setValueAtTime(0.16, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.75);
+        break;
+      }
+      case 'warp_gold': {
+        // 五星出金天籟鐘鳴 (Golden chime 6-tone shimmer)
+        [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98].forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + i * 0.06);
+          g.gain.setValueAtTime(0.14, now + i * 0.06);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.55);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(now + i * 0.06); osc.stop(now + i * 0.06 + 0.58);
+        });
+        break;
+      }
+      case 'qte_perfect': {
+        // 原神料理完美雙鈴聲 (Dual sparkling chime)
+        [1760.0, 2637.0].forEach((f, i) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.frequency.setValueAtTime(f, now + i * 0.04);
+          g.gain.setValueAtTime(0.15, now + i * 0.04);
+          g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.35);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(now + i * 0.04); osc.stop(now + i * 0.04 + 0.36);
+        });
+        break;
+      }
+      case 'type': {
+        // 對話逐字微打擊聲
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.setValueAtTime(1600, now);
+        g.gain.setValueAtTime(0.015, now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.012);
+        osc.connect(g).connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.012);
+        break;
+      }
+      case 'jackpot': {
+        for(let j=0; j<6; j++){
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.frequency.setValueAtTime(700 + j*120, now + j*0.08);
+          g.gain.setValueAtTime(0.1, now + j*0.08);
+          g.gain.exponentialRampToValueAtTime(0.001, now + j*0.08 + 0.15);
+          osc.connect(g).connect(ctx.destination);
+          osc.start(now + j*0.08); osc.stop(now + j*0.08 + 0.18);
+        }
+        break;
+      }
+    }
+  }
+};
+// 初始化音效按鈕圖示
+$('sfxBtn').innerHTML = '';
+const initIcon = SFX.enabled ? 'vol' : 'mute';
+setHTML('sfxBtn', SFX.enabled ? '🔊' : '🔇');
+$('sfxBtn').title = SFX.enabled ? '音效：開' : '音效：關';
+$('sfxBtn').setAttribute('aria-label', SFX.enabled ? '音效：開' : '音效：關');
+
+window.addEventListener('pointerdown', () => SFX.init(), { once: true });
+$('sfxBtn').onclick = () => {
+  SFX.enabled = !SFX.enabled;
+  const icon = SFX.enabled ? 'vol' : 'mute';
+  setHTML('sfxBtn', I(icon));
+  $('sfxBtn').title = SFX.enabled ? '音效：開' : '音效：關';
+  $('sfxBtn').setAttribute('aria-label', SFX.enabled ? '音效：開' : '音效：關');
+  if (SFX.enabled) SFX.play('click');
+};
+
+// ─── SVG 圖示 ────────────────────────────────────────────────
+const PATH = {
+  book: '<path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M8 7h7"/>',
+  coin: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 10.5h5M9.5 13.5h5"/>',
+  star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  cup: '<path d="M5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h2a2 2 0 0 1 0 4h-2M8 3v2M12 3v2"/>',
+  note: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  spark: '<path d="M12 3v5M12 16v5M3 12h5M16 12h5"/>',
+  ball: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  people: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.7 0 4.5 1.7 4.5 4"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  bag: '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+  card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/>',
+   vol:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>',
+   mute:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l4 6M21 9l-4 6"/>',
+   cat: '<path d=\"M12 4c-2.2 0-4 1.8-4 4v2c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-2c0-2.2-1.8-4-4-4zm0 10c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z\"/>',
+   megaphone: '<path d=\"M12 2c-5 0-9 4-9 9v2c0 3 2 5 5 6h2c3-1 5-3 5-6v-9c0-5-4-9-9-9z\"/>',
+   flame: '<path d=\"M12 2l-3 6h-4l6 3l3-6h-4z\"/>',
+   shield: '<path d=\"M12 2l-8 8h4v8h8v-8h4z\"/>',
+   gift: '<path d=\"M12 2l-8 8h4v8h8v-8h4z\"/>',
+   receipt: '<path d=\"M4 2h16v20H4z\"/>',
+   paw: '<path d=\"M12 2c-2 0-4 1.5-4 3.5s2 3.5 4 3.5 4-1.5 4-3.5-2-3.5-4-3.5z\"/>',
+   scroll: '<path d=\"M4 4h16v16H4z\"/>',
+   fast: '<path d=\"M2 12h20\"/>',
+   eye: '<path d=\"M12 2c-5.5 0-10 4.5-10 10s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z\"/>',
+   tag: '<path d=\"M12 2l-8 8v8h8z\"/>',
+   laptop: '<path d=\"M4 4h16v16H4z\"/>',
+   gear: '<path d=\"M12 2c-2.5 0-5 1.5-5 3.5s1.5 3.5 5 3.5 5-1.5 5-3.5S17.5 2 12 2z\"/>',
+   chart: '<path d=\"M4 20h16\"/>',
+   palette: '<path d=\"M12 2c-4 0-8 2-8 6s2 6 8 6 8-2 8-6S16 2 12 2z\"/>',
+   pulse: '<path d=\"M2 12h4l4 8H8l4-8h4\"/>',
+   landmark: '<path d=\"M12 2l-8 8h4v8h8v-8h4z\"/>',
+   sparkle: '<path d=\"M12 2l-4 4h2l4-4h-2l-4-4h-2l4 4h2z\"/>',
+   celebration: '<path d=\"M12 2l-4 4h2l4-4h-2l-4-4h-2l4 4h2z\"/>',
+   money: '<path d=\"M12 2l-8 8h4v8h8v-8h4z\"/>',
+   fish: '<path d=\"M12 2c-4 0-8 2-8 6s2 6 8 6 8-2 8-6S16 2 12 2z\"/>',
+   yarn: '<path d=\"M12 2c-4 0-8 2-8 6s2 6 8 6 8-2 8-6S16 2 12 2z\"/>',
+};
+const I=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${PATH[n]||''}</svg>`;
+setHTML('sfxBtn', I(initIcon));
+setHTML('btn-buff', '天賦');
+setHTML('btn-bag', `${I('bag')} 道具`);
+setHTML('status-cloud', `${I('megaphone')}${I('flame')}`);
+
+// ─── 雙緩衝立繪平滑淡入淡出系統 ─────────────────────────────
+function createPortrait(id, key, moods){
+  const box = $(id); if(!box) return null;
+  box.classList.add('portrait');
+  const imgs = [0,1].map(() => {
+    const i = document.createElement('img');
+    i.alt = ''; i.draggable = false;
+    box.appendChild(i); return i;
+  });
+  const url = m => `assets/${key}_${m}.webp`;
+  (moods||['normal','relaxed','tired','anxious','breakdown','happy']).forEach(m => { new Image().src = url(m); });
+  let top = 0, mood = null, tok = 0;
+  function setMood(m){
+    if(m === mood) return; mood = m;
+    const my = ++tok, cur = imgs[top], nxt = imgs[1-top]; let done = false;
+    const show = () => {
+      if(done || my !== tok) return; done = true;
+      nxt.style.transition = 'none'; nxt.style.opacity = 0; nxt.style.zIndex = 2; cur.style.zIndex = 1;
+      void nxt.offsetWidth; nxt.style.transition = 'opacity .3s'; nxt.style.opacity = 1;
+      setTimeout(() => { if(my === tok){ cur.style.opacity = 0; top = 1-top; } }, 300);
+    };
+    nxt.onload = show;
+    nxt.onerror = () => { nxt.onerror = null; nxt.src = url('normal'); };
+    nxt.src = url(m);
+    if(nxt.complete && nxt.naturalWidth) show();
+  }
+  return { setMood, getMood:()=>mood };
+}
+
+// ─── 星鐵「躍遷」天賦卡池 (3選1) ─────────────────────────────
+const TALENTS = [
+  { id:'energy', name:'能量過載', icon:'⚡', stars:'★★★★★', desc:'本月體力上限提升至 12 點！', ssr:true, apply:()=>{ G.maxE = 12; G.e = 12; } },
+  { id:'study_buff', name:'智識開悟', icon:'📖', stars:'★★★★', desc:'學業測驗學識收穫 ×1.5 倍！', ssr:false, apply:()=>{ G.talentEffects.studyMul = 1.5; } },
+  { id:'work_buff', name:'黃金時薪', icon:'💰', stars:'★★★★', desc:'兼職打工薪資額外提升 30%！', ssr:false, apply:()=>{ G.talentEffects.workMul = 1.3; } },
+  { id:'stress_shield', name:'存護意志', icon:'🛡️', stars:'★★★★', desc:'本月所有行動造成的壓力增加減半！', ssr:false, apply:()=>{ G.talentEffects.stressMul = 0.5; } },
+  { id:'social_star', name:'同諧共鳴', icon:'🤝', stars:'★★★★', desc:'與所有 NPC 交流好感獲取翻倍！', ssr:false, apply:()=>{ G.talentEffects.socialMul = 2.0; } },
+  { id:'lucky_star', name:'命途錦鯉', icon:'🌟', stars:'★★★★★', desc:'全行動基礎成功率直接 +15%！', ssr:true, apply:()=>{ G.talentEffects.successRateBonus = 0.15; } },
+  { id:'pet_lover', name:'靈獸眷顧', icon:'🐱', stars:'★★★★', desc:'咪寶親密度直接 +30，解鎖特技！', ssr:false, apply:()=>{ addPetAffection(30); } },
+  { id:'discount', name:'星際貿易', icon:'🏷️', stars:'★★★★', desc:'夜市玩樂與福利社道具全面 7 折！', ssr:false, apply:()=>{ G.talentEffects.costMul = 0.7; } },
+  { id:'fitness', name:'巡獵身法', icon:'🏃', stars:'★★★★', desc:'每次運動額外獲得 +4 健康！', ssr:false, apply:()=>{ G.talentEffects.sportHealth = 4; } }
+];
+
+// ─── 福利社道具清單 (星級階層) ───────────────────────────────
+const SHOP_ITEMS = [
+  { id:'drink', name:'提神能量飲', icon:'🧃', rank:'r3', stars:'★★★', price:400, desc:'立即恢復 2 點體力！', use:()=>{ G.e = Math.min(G.maxE||10, G.e+2); showToast('飲用能量飲，體力恢復 2 點！',I('bolt')); } },
+  { id:'notes', name:'考古題精華', icon:'📑', rank:'r4', stars:'★★★★', price:600, desc:'下次學業必定答對且大成功！', use:()=>{ G.bagBuffs.autoStudySuccess = true; showToast('精讀考古題，下回學業必大成功！',I('star')); } },
+  { id:'cat_food', name:'特級鮪魚罐頭', icon:'🥫', rank:'r4', stars:'★★★★', price:250, desc:'餵給咪寶，親密度大增 +25！', use:()=>{ addPetAffection(25); SFX.play('meow'); showToast('咪寶吃得超開心！親密度大增！',I('cat')); } },
+  { id:'amulet', name:'轉運幸運御守', icon:'🧧', rank:'r5', stars:'★★★★★', price:450, desc:'抵免下一次行動的失敗懲罰！', use:()=>{ G.bagBuffs.failImmune = true; showToast('御守生效，已提供一次失敗保護！',I('shield')); } }
+];
+
+// ─── 系所 4 選 1 專業題庫 (學業行動專用) ─────────────────────
+const QUIZ = {
+  cs: [
+    ['以下哪種排序演算法最壞時間複雜度為 O(n²)？', ['合併排序','快速排序','堆積排序','計數排序'], 1],
+    ['HTTP 狀態碼 404 代表？', ['伺服器錯誤','未授權','找不到資源','重新導向'], 2],
+    ['以下哪種資料結構遵循 LIFO？', ['佇列 (Queue)','堆疊 (Stack)','鏈結串列','二元樹'], 1],
+    ['Python 中 [x*2 for x in range(3)] 的結果為？', ['[0, 2, 4]','[1, 2, 3]','[0, 1, 2]','[2, 4, 6]'], 0]
+  ],
+  eng: [
+    ['以下哪種材料的導電性能最佳？', ['矽','純銅','橡膠','玻璃'], 1],
+    ['牛頓第二定律 F=ma 中，a 代表什麼物理量？', ['面積 (Area)','振幅 (Amplitude)','加速度 (Acceleration)','角度 (Angle)'], 2],
+    ['多個電阻並聯時，電路總電阻會如何變化？', ['增加','不變','減少','視電壓而定'], 2],
+    ['微積分中 ∫x dx 的不定積分結果為？', ['x','x²/2 + C','2x','1/x'], 1]
+  ],
+  biz: [
+    ['SWOT 分析矩陣中，字母 T 代表什麼？', ['科技 (Technology)','時間 (Time)','威脅 (Threats)','培訓 (Training)'], 2],
+    ['市場供給增加而需求維持不變，均衡價格會如何？', ['上升','下降','維持不變','無法確定'], 1],
+    ['財務報表中，資產負債表的核心恆等式為？', ['資產 = 負債','資產 = 負債 + 權益','收入 = 支出','淨利 = 毛利'], 1],
+    ['傳統行銷 4P 理論中，不包含以下哪一項？', ['產品 (Product)','價格 (Price)','人員 (People)','推廣 (Promotion)'], 2]
+  ],
+  arts: [
+    ['色光三原色（RGB）是哪三種顏色？', ['紅黃藍','紅綠藍','青洋紅黃','橙綠紫'], 1],
+    ['莎士比亞的知名劇作《哈姆雷特》屬於哪種戲劇類型？', ['喜劇','歷史劇','悲劇','傳奇劇'], 2],
+    ['下列哪位是世界著名的印象派代表畫家？', ['達文西','莫內','米開朗基羅','達利'], 1],
+    ['鋼琴五線譜上的中央 C (Middle C) 位於鍵盤何處？', ['最左端','最右端','正中央偏左','正中央偏右'], 2]
+  ],
+  med: [
+    ['人體表面積最大、重量最重的器官是？', ['肝臟','大腦','皮膚','肺臟'], 2],
+    ['正常健康成人於平靜狀態下的靜息心率範圍為？', ['40-50 bpm','60-100 bpm','100-120 bpm','20-40 bpm'], 1],
+    ['緊急醫療設備 AED 的中文全名是？', ['自動體外心臟去顫器','自動心電圖儀','氣道急救呼吸器','創傷評估監測器'], 0],
+    ['下列哪種維生素屬於脂溶性維生素？', ['維生素 C','維生素 B1','維生素 A','維生素 B12'], 2]
+  ],
+  soc: [
+    ['馬斯洛需求層次理論中，最高層次的核心需求是？', ['安全需求','社交愛與歸屬','尊嚴需求','自我實現'], 3],
+    ['經濟指標 GDP 的完整中文名稱是？', ['一般物價指數','國內生產毛額','政府財政赤字','對外貿易順差'], 1],
+    ['社會學家米德 (Mead) 提出「主我」與「客我」概念，屬於哪個學派？', ['結構功能論','符號互動論','社會衝突論','後現代主義'], 1],
+    ['下列哪種選舉制度是按照各政黨得票率分配席次？', ['單一選區制','相對多數決制','政黨比例代表制','排序複選制'], 2]
+  ]
+};
+
+// 行動設定
+const MON = ['9月', '10月'];
+const NAMES = { k:['學識','book'], m:['金錢','coin'], sk:['技能','star'], h:['健康','heart'] };
+const A = {
+  study:  { n:'教學大樓', c:2, ic:'book',   fx:{k:5,st:5},   bad:{k:2,st:8},   ab:'k',  g:'學識' },
+  work:   { n:'兼職工讀', c:3, ic:'cup',    fx:{st:6},       g:'金錢' },
+  hobby:  { n:'社團活動', c:2, ic:'note',   fx:{sk:4,st:-4}, bad:{sk:1,st:-1}, ab:'sk', g:'技能' },
+  play:   { n:'夜市街道', c:3, ic:'spark',  fx:{st:-12},     g:'' },
+  sport:  { n:'校園操場', c:2, ic:'ball',   fx:{h:5,st:-5},  bad:{h:1,st:-1}, ab:'h',  g:'健康' },
+  social: { n:'中央噴泉', c:2, ic:'people', fx:{sk:2,st:-3},  bad:{sk:0,st:2},  ab:'sk', g:'社交' },
+  shop:   { n:'校園福利社', c:0, ic:'bag',  fx:{},           g:'道具' },
+  end:    { n:'學生宿舍', c:0, ic:'moon',   fx:{},           g:'結算' }
+};
+
+const hint = st => st>=8?'壓力↑↑':st>0?'壓力↑':st<0?'壓力↓':'';
+const hs = c => hint(Math.max(c.fx?.st||0, c.bad?.st||-99));
+
+// 劇情事件庫
+const EV = [
+  {
+    t: '社團博覽會搶新生',
+    npc: 'kai',
+    x: '走廊兩側被擠得水洩不通，各社團學長姐推著整箱泡麵熱情拉攏。室友阿凱拉著你往人群衝！',
+    c: [
+      { t: '加入熱門社團！', fx:{sk:3,m:-300,st:-2}, flag:'joined_club', r:'你加入了熱門社團，認識了許多新朋友！' },
+      { t: '搶免費泡麵贈品就好', fx:{m:200,st:3}, r:'你擠過人群抱回了兩大箱泡麵，省下不少餐費。' },
+      { t: '轉身回宿舍睡覺', fx:{h:3,st:-4}, r:'你遠離了喧鬧的走廊，安穩地睡了個舒服的午覺。' }
+    ]
+  },
+  {
+    t: '第一晚的宿舍夜聊',
+    npc: 'kai',
+    x: '開學第一週的夜晚，室友阿凱坐在床邊滑著手機，空氣中洋溢著大學新生的陌生與期待。',
+    c: [
+      { t: '主動找阿凱天南地北暢聊', fx:{sk:2,st:-2}, r:'你們從高中聊到未來的夢想，阿凱對你十分信任。' },
+      { t: '戴上耳機早點就寢', fx:{h:3,st:-3}, r:'作息規律，隔天一早的精神相當飽滿。' },
+      { t: '默默躲在被窩想家', fx:{st:5}, r:'雖然有點想家，但這也是獨立成長的第一步。' }
+    ]
+  },
+  {
+    t: '課後助教徵詢',
+    npc: 'yu',
+    x: '鄰系的小雨學姐走過來：「同學，我們有一份系上助教的兼職機會，時薪優渥，想試試看嗎？」',
+    c: [
+      { t: '接下這份兼職', fx:{m:600,k:2,st:4}, flag:'took_tutor', r:'雖然忙碌了些，但兼顧了收入與學識成長。' },
+      { t: '婉拒，專注適應新生活', fx:{st:-3,h:1}, r:'小雨溫和地表示理解，微笑道：「有空再來社辦找我玩！」' }
+    ]
+  },
+  {
+    t: '阿凱緊急借錢？',
+    npc: 'kai',
+    x: '阿凱苦著臉跑進房間：「兄弟，發票兌獎還沒開，月底快吃土了，能不能借我一千應急？」',
+    c: [
+      { t: '義氣相挺！掏錢借他', fx:{m:-1000,st:-2}, flag:'lent_money', r:'阿凱感激涕零：「兄弟一生平安！等我打工領錢請你吃大餐！」' },
+      { t: '婉拒：「我也快吃土了」', fx:{st:2}, r:'阿凱抓了抓頭笑了笑：「好吧，那我去找店長多排一班！」' }
+    ]
+  },
+  {
+    t: '颱風夜狂風驟雨',
+    npc: 'yu',
+    x: '外頭狂風呼嘯，窗外一片漆黑，宿舍突然跳電！門口傳來敲門聲，原來是小雨來借蠟燭。',
+    c: [
+      { t: '一起點蠟燭促膝長談', fx:{sk:3,st:-6}, r:'搖曳的燭光下，風雨聲格外溫柔，你們的心拉近了許多。' },
+      { t: '借她手電筒，自己早點睡', fx:{h:4,st:-2}, r:'在暴風雨聲中沉沉睡去，健康大幅恢復。' }
+    ]
+  },
+  {
+    t: '期中考倒數衝刺',
+    npc: 'boss',
+    x: '期中考只剩下一週，店長善意提醒：「考試要緊，需要我幫你把排班稍微調開嗎？」',
+    c: [
+      { t: '專心閉關苦讀', fx:{k:5,h:-2,st:4}, r:'你挑燈夜戰複習完了考科範圍，信心大增。' },
+      { t: '維持正常工讀與步調', fx:{m:400,k:1,st:1}, r:'步調穩健，各方面都在掌握之中。' }
+    ]
+  }
+];
+
+// 因果特殊事件
+const SPECIAL_EVENTS = {
+  scholar: {
+    t: '命運的分岔：學術十字路口',
+    npc: 'yu',
+    x: '期中考公布，你的優異成績名列前茅！教授特地叫住你，探詢你未來提早加入專題研究的意願。',
+    c: [
+      { t: '堅定答應：邁向學術殿堂！', fx:{k:6,st:4}, r:'教授滿意地點頭，你的大一學業奠定了無可撼動的基礎！' },
+      { t: '感謝教授，先多方探索', fx:{sk:3,st:-2}, r:'你為自己保留了更多彈性與探索的空間。' }
+    ]
+  },
+  slasher: {
+    t: '命運的分岔：斜槓人生邀約',
+    npc: 'boss',
+    x: '店長看著你這幾個月熟練幹練的表現，私下遞出一張名片：「我有個朋友在新創公司，想找有實戰力的年輕人合作！」',
+    c: [
+      { t: '接下挑戰，開啟斜槓！', fx:{m:1500,sk:4,st:3}, r:'你的才華被社會看見，為未來的職業生涯打響第一槍！' },
+      { t: '踏實把眼前工作做好', fx:{m:800,h:2}, r:'店長讚許你的沈穩，默默替你的時薪再次調薪。' }
+    ]
+  },
+  pet: {
+    t: '命運的分岔：校園貓神的報恩',
+    npc: 'kai',
+    x: '阿凱驚呼：「天啊！咪寶居然一路跟著你到教室，還乖乖坐在你桌上！大家都被這隻親人的校貓融化了！」',
+    c: [
+      { t: '收編咪寶，成為校園貓爸貓媽！', fx:{h:8,st:-10}, r:'咪寶呼嚕呼嚕地蹭著你，你獲得了校園最療癒的終極守護！' },
+      { t: '和大家一起摸貓拍合照', fx:{sk:5,st:-8}, r:'這張貓咪合照在系上社群瘋傳，你成了風雲人物！' }
+    ]
+  },
+  default: {
+    t: '命運的分岔：初入大學的印記',
+    npc: 'kai',
+    x: '第一學期轉眼過了一半，你站在校園噴水池前，看著人來人往的同學，心中默默回顧這兩個月的生活。',
+    c: [
+      { t: '為未來的目標奮力一搏！', fx:{k:3,sk:3,st:2}, r:'你眼神堅定，對接下來的大學生活充滿了雄心壯志！' },
+      { t: '保持身心平衡，健康生活', fx:{h:5,st:-5}, r:'你深深呼吸了一口校園微風，步伐輕鬆自在。' }
+    ]
+  }
+};
+
+// 打工小遊戲題庫
+const MG = [
+  { n:'咖啡店外場點單', job:'校園咖啡館', q:[
+    ['客人急忙說：「我要一杯熱拿鐵，半糖微冰！」',['冰美式','熱拿鐵半糖微冰','抹茶拿鐵'],1],
+    ['客人問：「請問櫥窗裡這個是重乳酪起司蛋糕嗎？」',['是的，新鮮現做','這是布朗尼','這是鬆餅'],0],
+    ['客人拿著自備環保杯結帳：「大杯冰美式，要刷載具。」',['熱美式內用','冰美式自備杯刷載具','外送訂單'],1]
+  ]},
+  { n:'便利店快速收銀', job:'大學便利店', q:[
+    ['客人買了 75 元便當，付了 100 元鈔票，應找零？',['15 元','25 元','35 元'],1],
+    ['客人拿了 165 元零食，付了 500 元，應找零？',['335 元','345 元','435 元'],0],
+    ['客人使用悠遊卡結帳，機器發出嗶聲，螢幕顯示餘額不足，應？',['直接放行','請客人補差額或換支付方式','按作廢扣款'],1]
+  ]},
+  { n:'倉庫快速整理備料', job:'連鎖餐廳後廚', q:[
+    ['剛進貨的鮮奶應放在何處保存？',['常溫備料台','4℃ 冷藏專區','室外走廊'],1],
+    ['食材管理最核心的庫存原則是什麼？',['先進先出 (FIFO)','後進先出','隨意拿取'],0],
+    ['地板濕滑，為防止同仁滑倒應先做什麼處置？',['擺放警告三角錐並立即拖乾','假裝沒看到','等下班再弄'],0]
+  ]}
+];
+
+// 結局
+const END = {
+  scholar:    ['學霸養成之路', '你把絕大多數心力傾注在學問探究中，成績斐然，教授與同學無不對你刮目相看。'],
+  tycoon:     ['精打細算的斜槓打工王', '靠著勤勞的雙手與靈活的頭腦，你在兼職中累積了豐碩的第一桶金與職場智慧。'],
+  maker:      ['多才多藝的校園達人', '積極參加社團活動，你的專長技能與人脈圈在短短兩個月中迅速開花結果。'],
+  healthy:    ['身心平衡的生活家', '懂得在忙碌中照顧自己的作息與情緒，穩健踏實，身心靈狀態處於最佳平衡。'],
+  cat_master: ['校園貓咪守護者 🐱', '大一最大的收穫不是成績，而是收穫了一隻忠心耿耿的校霸貓咪！你是所有人羨慕的人生贏家！'],
+  burnout:    ['燃燒殆盡的警訊', '各方面的壓力累積逼近極限，大學是長跑而不是短跑，現在的你需要好好喘口氣。'],
+  balanced:   ['平實而溫暖的大學篇章', '學業、人際、生活各有所得，不急不躁，屬於你的青春故事才剛剛揭開序幕！']
+};
+
+// ─── 遊戲核心狀態 ───────────────────────────────────────────
+let G;
+const DW = 1280, DH = 714;
+function fitStage(){
+  const s = Math.min(innerWidth / DW, innerHeight / DH);
+  document.documentElement.style.setProperty('--s', s);
+}
+window.addEventListener('resize', fitStage);
+fitStage();
+
+const show = id => {
+  ['s-start','s-turn','s-card','s-end'].forEach(x => {
+    const el = $(x);
+    if(el) el.classList.toggle('hid', x !== id);
+  });
+};
+
+function mood(){
+  if(!G) return 'normal';
+  const { st, h } = G.s;
+  if(st >= 80) return 'breakdown';
+  if(st >= 65) return 'anxious';
+  if(st >= 50 || h < 40) return 'tired';
+  if(st < 30 && h >= 65) return 'relaxed';
+  return 'normal';
+}
+
+function apply(f){
+  if(!G) return;
+  for(const k in f){
+    if(G.s[k] !== undefined){
+      let delta = f[k];
+      if(k === 'st' && delta > 0 && G.talentEffects.stressMul){
+        delta = Math.round(delta * G.talentEffects.stressMul);
+      }
+      G.s[k] += delta;
+      if(k !== 'm') G.s[k] = cl(G.s[k]);
+    }
+  }
+}
+
+const flash = m => {
+  if(G && G.pp){
+    G.pp.setMood(m);
+    setTimeout(() => G.pp.setMood(mood()), 1200);
+  }
+};
+
+const prob = a => {
+  let p = 0.5 + ((a.ab ? G.s[a.ab] : 40) - 30) / 200 + (G.s.h - 50) / 300 - (G.s.st - 50) / 300;
+  if(G.pers === 'hardworker' && (a.n==='學業'||a.n==='打工')) p += 0.08;
+  if(G.pers === 'outgoing' && a.n==='社交') p += 0.1;
+  if(G.talentEffects.successRateBonus) p += G.talentEffects.successRateBonus;
+  return cl(p, 0.2, 0.95);
+};
+
+const ok = a => Math.random() < cl(prob(a) + (Math.random()*0.16 - 0.08), 0.2, 0.95);
+
+// 8 個校園錨點位置
+const LOC = {
+  study:  [30, 22, '教學大樓',   '聽課解題提升學識，但課業壓力會上升。'],
+  work:   [51, 79, '兼職工讀',   '挑選兼職透過小遊戲賺取生活費。'],
+  hobby:  [88, 62, '社團活動',   '研習興趣才藝，培養技能與抒壓。'],
+  play:   [31, 70, '夜市街道',   '花費金錢放鬆玩樂，大幅清除壓力。'],
+  sport:  [75, 18, '校園操場',   '慢跑鍛鍊筋骨，提高健康活力。'],
+  social: [52, 50, '中央噴泉',   '與同學交流互動，拓展校園人脈。'],
+  shop:   [70, 72, '校園福利社', '購買提神飲料、考古題與貓罐頭！'],
+  end:    [6,  47, '學生宿舍',   '結束本月行動，進入生活事件結算。']
+};
+
+function setTime(t){
+  const st = $('s-turn'), bg = $('bg');
+  if(!st || !bg) return;
+  st.dataset.t = t;
+  bg.src = t === 'day' ? 'assets/school_map.webp' : `assets/school_map_${t}.webp`;
+  bg.onerror = () => { bg.onerror = null; bg.src = 'assets/school_map.webp'; };
+}
+
+// 核心渲染
+function renderTurn(){
+  show('s-turn');
+  const mo = $('mon');
+  if(mo && mo.textContent !== String(G.r + 9)){
+    mo.textContent = G.r + 9;
+    const c = $('cal');
+    c.classList.remove('flip'); void c.offsetWidth; c.classList.add('flip');
+  }
+
+  // 渲染數值
+  setHTML('stats', Object.entries(NAMES).map(([k,[n,i]]) => `
+    <div class="chip ${k}">
+      ${I(i)}<span>${n}</span><b>${Math.round(G.s[k])}</b>
+    </div>
+  `).join('') + `
+    <div class="chip st-p">
+      ${I('bolt')}<span>壓力</span><b>${Math.round(G.s.st)}</b>
+    </div>
+  `);
+
+  // 渲染體力燈條
+  const maxE = G.maxE || 10;
+  setHTML('bar', `
+    <div class="en" role="img" aria-label="體力 ${G.e} / ${maxE}">
+      ${Array.from({length:maxE}, (_,i) => `<i class="${i<G.e?'':'off'}"></i>`).join('')}
+    </div>
+    <span>${I('bolt')} ${G.e} / ${maxE}</span>
+  `);
+
+  // 渲染傳送錨點 Pin
+  const pinsHtml = Object.entries(LOC).map(([k, l]) => {
+    const a = A[k] || { n:l[2], c:0, ic:'spark' };
+    const cCost = a.c || 0;
+    const off = Boolean(cCost > 0 && G.e < cCost);
+    let tagSub = '結束本月';
+    if(cCost > 0) tagSub = `體力 ${cCost}`;
+    else if(k === 'shop') tagSub = '免體力';
+
+    return `
+      <button class="pin${off?' off':''}" data-k="${k}" ${off?'disabled':''} style="left:${l[0]}%;top:${l[1]}%">
+        <span class="ring"></span>
+        <span class="dot">${I(a.ic || 'spark')}</span>
+        <span class="tag">${l[2]}<small>${tagSub}</small></span>
+      </button>
+    `;
+  }).join('');
+  setHTML('pins', pinsHtml);
+
+  // 時事情報跑馬燈
+  const news = $('news-bar');
+  if(news){
+    if(G.r === 0) news.innerHTML = `${I('megaphone')} 【9月情報】國際油價與生活物資微幅上揚，玩樂開銷需謹慎規劃！`;
+    else news.innerHTML = `${I('megaphone')} 【10月情報】基本工資調薪方案通過！兼職時薪獲得全面保障！`;
+  }
+
+  updatePetHUD();
+
+  const logEl = $('log');
+  if(logEl){
+    logEl.textContent = G.log;
+    logEl.classList.add('pop');
+    setTimeout(() => logEl.classList.remove('pop'), 250);
+  }
+
+  const t = G.e > 6 ? 'day' : G.e > 2 ? 'dusk' : 'night';
+  if(G.t !== t){ G.t = t; setTime(t); }
+
+  if(G.pp) G.pp.setMood(mood());
+}
+
+// 提示 Tooltip
+function tip(k){
+  const l = LOC[k], a = A[k], h = a ? hint(a.fx?.st||0) : '', t = $('tip');
+  if(!t || !l) return;
+  const cost = a?.c || 0;
+  t.innerHTML = `<b>${l[2]} ✦ 委託說明</b><br>${l[3]}${cost > 0 && k!=='work' ? `<br><small style="color:var(--hoyo-gold)">預估達成率 ${Math.round(prob(a)*100)}%</small>` : ''}${h ? `<br><span class="hint">${h}</span>` : ''}`;
+  t.style.left = l[0] + '%';
+  t.style.top = l[1] + '%';
+  t.classList.toggle('below', l[1] < 30);
+  t.classList.remove('hid');
+}
+
+// 事件代理綁定 Pin 按鈕點擊
+$('pins').onpointerover = e => { const b = e.target.closest('.pin'); if(b) tip(b.dataset.k); };
+$('pins').onpointerout = () => $('tip').classList.add('hid');
+$('pins').onclick = e => {
+  const b = e.target.closest('.pin');
+  if(!b || b.disabled) return;
+  $('tip').classList.add('hid');
+  SFX.play('click');
+  burstPin(b.dataset.k);
+  if(b.dataset.k === 'end') endMonth();
+  else if(b.dataset.k === 'shop') openShopModal();
+  else act(b.dataset.k);
+};
+
+// 數值變動浮動文字動畫
+function showFloat(k, before){
+  const changes = [];
+  let isCrit = false;
+
+  ['k','m','sk','h'].forEach(key => {
+    if(G.s[key] !== before[key]){
+      const diff = G.s[key] - before[key];
+      const critHit = diff >= 10 || (key === 'm' && diff >= 500) || (key === 'sk' && diff >= 2);
+      if(critHit) isCrit = true;
+      changes.push({
+        txt: `${diff>0?'+':''}${diff} ${NAMES[key][0]}`,
+        neg: diff < 0,
+        key: key,
+        crit: critHit
+      });
+    }
+  });
+
+  const stDiff = G.s.st - before.st;
+  if(stDiff !== 0){
+    const critStress = Math.abs(stDiff) >= 12;
+    if(critStress) isCrit = true;
+    changes.push({
+      txt: `${stDiff>0?'+':''}${stDiff} 壓力`,
+      neg: stDiff > 0,
+      key: 'st',
+      crit: critStress
+    });
+  }
+
+  const container = $('s-turn');
+  if(!container) return;
+  const loc = LOC[k] || [50, 50];
+
+  if(isCrit){
+    SFX.play('crit');
+  }
+
+  changes.forEach((c, idx) => {
+    const el = document.createElement('div');
+    el.className = c.crit ? 'crit-text' : 'float';
+    
+    let color = '#38bdf8';
+    if(c.key === 'm') color = '#fbbf24';
+    else if(c.key === 'sk') color = '#c084fc';
+    else if(c.key === 'h') color = '#4ade80';
+    else if(c.key === 'st') color = c.neg ? '#f87171' : '#2dd4bf';
+
+    if(c.crit){
+      el.innerHTML = `<span class="crit-badge">CRIT!</span> <span style="color:${color};">${c.txt}</span>`;
+    } else {
+      el.textContent = c.txt;
+      if(c.neg) el.classList.add('neg');
+      el.style.color = color;
+    }
+
+    el.style.left = `calc(${loc[0]}% + ${(idx - changes.length/2) * 35}px)`;
+    el.style.top = `calc(${loc[1]}% - ${32 + idx * 18}px)`;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), c.crit ? 1250 : 950);
+  });
+}
+
+function burstPin(k){
+  const btn = document.querySelector(`.pin[data-k="${k}"]`);
+  if(!btn) return;
+  btn.classList.add('burst');
+  setTimeout(() => btn.classList.remove('burst'), 500);
+}
+
+function showToast(msg, icon='✦'){
+  const logEl = $('log');
+  if(!logEl) return;
+  G.log = `${icon} ${msg}`;
+  logEl.textContent = G.log;
+  logEl.classList.add('pop');
+  setTimeout(() => logEl.classList.remove('pop'), 250);
+}
+
+// ─── 寵物系統 (咪寶) ─────────────────────────────────────────
+function updatePetHUD(){
+  const p = G.pet;
+  const nameEl = $('pet-name');
+  const tipEl = $('pet-tip');
+  if(nameEl) nameEl.textContent = `${p.name} (Lv.${p.lv})`;
+  if(tipEl) tipEl.textContent = `✦ 親密: ${p.love}/100`;
+}
+
+function addPetAffection(amount){
+  const p = G.pet;
+  p.love += amount;
+  if(p.love >= 100 && p.lv < 5){
+    p.love -= 100;
+    p.lv++;
+    SFX.play('great');
+    showToast(`咪寶晉升至 Lv.${p.lv}！解鎖了全新夥伴特技！`,I('celebration'));
+  }
+  updatePetHUD();
+}
+
+function openPetModal(){
+  SFX.play('meow');
+  const p = G.pet;
+  const skills = [
+    'Lv.1 呼嚕治癒：撫摸時大幅抒發身心壓力 (-8 壓力)',
+    'Lv.2 散步尋寶：每月底隨機叼回校園道具或零用錢！',
+    'Lv.3 招財福貓：每次打工薪水自動額外 +15%！',
+    'Lv.4 錦鯉護體：所有行動大成功機率 +10%！',
+    'Lv.5 貓神降臨：解鎖專屬隱藏結局【校園貓咪守護者】！'
+  ];
+
+  openModal(`
+    <h2 style="font-size:24px;margin-bottom:8px;color:var(--hoyo-gold);">✦ 咪寶的校園小窩 ✦</h2>
+    <div style="font-size:52px;margin:8px 0;">🐈</div>
+    <p style="font-size:15px;color:var(--mu);">等級：<b>Lv.${p.lv}</b> · 親密度：<b>${p.love} / 100</b></p>
+    
+    <div style="background:var(--glass);padding:12px 16px;border-radius:14px;text-align:left;font-size:13px;line-height:1.8;margin:12px 0;border:1px solid var(--line);">
+      <b style="color:var(--hoyo-gold);">🌟 貓咪已解鎖夥伴技能：</b><br>
+      ${skills.map((s, idx) => `<div style="color:${idx < p.lv ? 'var(--ink)' : 'var(--mu)'};opacity:${idx < p.lv ? 1 : 0.45};">${s}</div>`).join('')}
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;">
+      <button class="pri" style="font-size:14px;padding:10px 6px;" onclick="petAction('pet')">撫摸梳毛<br><small style="opacity:0.8;">不花費 壓力-8</small></button>
+      <button class="pri" style="font-size:14px;padding:10px 6px;" onclick="petAction('feed')">餵食肉泥<br><small style="opacity:0.8;">花費 $100 親密+15</small></button>
+      <button class="pri" style="font-size:14px;padding:10px 6px;" onclick="petAction('play')">逗貓玩耍<br><small style="opacity:0.8;">耗1體力 親密+20</small></button>
+    </div>
+  `);
+}
+
+function petAction(type){
+  if(type === 'pet'){
+    SFX.play('meow');
+    apply({ st: -8 });
+    addPetAffection(6);
+    showToast('摸了摸咪寶，聽到牠呼嚕呼嚕的聲音，壓力一掃而空！',I('cat'));
+    closeModal();
+    renderTurn();
+  } else if(type === 'feed'){
+    if(G.s.m < 100){ showToast('零用錢不足，買不起貓肉泥！',I('money')); return; }
+    SFX.play('coin');
+    apply({ m: -100 });
+    addPetAffection(15);
+    showToast('咪寶津津有味地吃完了肉泥，滿意地舔舔嘴巴！',I('fish'));
+    closeModal();
+    renderTurn();
+  } else if(type === 'play'){
+    if(G.e < 1){ showToast('體力不足，先休息一下再陪貓玩吧！',I('bolt')); return; }
+    G.e -= 1;
+    SFX.play('meow');
+    addPetAffection(20);
+    if(Math.random() < 0.5){
+      apply({ m: 150 });
+      showToast('在沙發底下發現了咪寶藏的私房錢 $150！',I('coin'));
+    } else {
+      showToast('拿起逗貓棒和咪寶玩得不亦樂乎！',I('yarn'));
+    }
+    closeModal();
+    renderTurn();
+  }
+}
+$('pet-box').onclick = openPetModal;
+
+// ─── 星鐵風「躍遷」天賦卡 (每月初 3選1) ──────────────────────
+
+// ─── 全螢幕原神/星鐵躍遷祈願 Canvas 流星動畫 ──────────────────
+function playWarpAnimation(onComplete){
+  const canvas = $('warp-canvas');
+  if(!canvas){ if(onComplete) onComplete(); return; }
+  canvas.classList.remove('hid');
+  canvas.width = 1280;
+  canvas.height = 714;
+  const ctx = canvas.getContext('2d');
+  
+  SFX.play('warp_start');
+  const startTime = (window.performance ? performance.now() : Date.now());
+  const duration = 1200;
+  
+  const stars = Array.from({length: 70}, () => ({
+    x: Math.random() * 1280,
+    y: Math.random() * 714,
+    speed: 6 + Math.random() * 14,
+    size: 1 + Math.random() * 2.5,
+    gold: Math.random() > 0.45
+  }));
+
+  const meteor = { x: -120, y: 120, targetX: 1400, targetY: 520 };
+  let goldChimePlayed = false;
+
+  function render(now){ now = now || (window.performance ? performance.now() : Date.now());
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / duration);
+
+    ctx.fillStyle = 'rgba(7, 10, 19, 0.42)';
+    ctx.fillRect(0, 0, 1280, 714);
+
+    stars.forEach(s => {
+      s.x += s.speed * (1 + progress * 2.2);
+      if(s.x > 1280) s.x = 0;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = s.gold ? '#fbbf24' : '#e0e7ff';
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = s.gold ? '#f59e0b' : '#818cf8';
+      ctx.fill();
+    });
+
+    if(progress > 0.12 && progress < 0.88){
+      if(!goldChimePlayed && progress > 0.28){
+        SFX.play('warp_gold');
+        goldChimePlayed = true;
+      }
+      const mProg = (progress - 0.12) / 0.76;
+      const curX = meteor.x + (meteor.targetX - meteor.x) * mProg;
+      const curY = meteor.y + (meteor.targetY - meteor.y) * mProg;
+      
+      const grad = ctx.createLinearGradient(curX - 220, curY - 70, curX, curY);
+      grad.addColorStop(0, 'rgba(245, 158, 11, 0)');
+      grad.addColorStop(0.65, 'rgba(251, 191, 36, 0.65)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 1)');
+
+      ctx.beginPath();
+      ctx.moveTo(curX - 260, curY - 80);
+      ctx.lineTo(curX, curY);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 12;
+      ctx.lineCap = 'round';
+      ctx.shadowBlur = 28;
+      ctx.shadowColor = '#fbbf24';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(curX, curY, 14, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = 35;
+      ctx.shadowColor = '#fef08a';
+      ctx.fill();
+    }
+
+    if(progress < 1){
+      requestAnimationFrame(render);
+    } else {
+      ctx.clearRect(0, 0, 1280, 714);
+      canvas.classList.add('hid');
+      if(onComplete) onComplete();
+    }
+  }
+  requestAnimationFrame(render);
+}
+
+function openTalentModal(){
+  playWarpAnimation(() => {
+    const shuffled = [...TALENTS].sort(() => Math.random() - 0.5).slice(0, 3);
+    openModal(`
+      <h2 style="font-size:26px;color:var(--hoyo-gold);margin-bottom:6px;">✦ 命運躍遷 · FATE WARP ✦</h2>
+      <p style="font-size:14px;color:var(--mu);">新月份來到！請選擇一項專屬光錐命途加成，伴隨你度過本月：</p>
+      <div class="gacha-grid">
+        ${shuffled.map(t => `
+          <div class="gacha-card ${t.ssr?'ssr':''}" onclick="chooseTalent('${t.id}')">
+            <span class="gacha-badge">${t.ssr ? '✦ SSR 稀有' : 'SR 天賦'}</span>
+            <div style="font-size:38px;margin:8px 0;">${t.icon}</div>
+            <b style="font-size:16px;">${t.name}</b>
+            <div class="gacha-stars">${t.stars}</div>
+            <p style="font-size:12px;color:var(--mu);margin-top:6px;line-height:1.4;">${t.desc}</p>
+          </div>
+        `).join('')}
+      </div>
+    `, false);
+  });
+}
+
+function chooseTalent(id){
+  const t = TALENTS.find(x => x.id === id);
+  if(!t) return;
+  SFX.play('great');
+  G.currentTalent = t;
+  t.apply();
+  closeModal();
+  showToast(`已獲得躍遷天賦【${t.name}】！效果將持續本月！`);
+  renderTurn();
+}
+$('btn-buff').onclick = () => {
+  if(!G.currentTalent){ showToast('目前尚無生效中的命運天賦。'); return; }
+  SFX.play('ding');
+  openModal(`
+    <h2 style="color:var(--hoyo-gold);">✦ 當前生效光錐天賦 ✦</h2>
+    <div style="font-size:48px;margin:12px 0;">${G.currentTalent.icon}</div>
+    <h3 style="color:var(--hoyo-gold);">${G.currentTalent.name}</h3>
+    <div style="color:var(--hoyo-gold);">${G.currentTalent.stars}</div>
+    <p style="font-size:15px;margin:10px 0;">${G.currentTalent.desc}</p>
+  `);
+};
+
+// ─── 背包與福利社道具系統 ─────────────────────────────────────
+function openBagModal(){
+  SFX.play('click');
+  const bag = G.bag;
+  const entries = Object.entries(bag).filter(([,count]) => count > 0);
+  
+  openModal(`
+    <h2 style="color:var(--hoyo-gold);">🎒 拓荒隨身背包</h2>
+    ${entries.length === 0 ? '<p style="color:var(--mu);margin:24px 0;">背包目前空空如也，可到校園福利社添購！</p>' : `
+      <div style="display:grid;gap:10px;margin:16px 0;">
+        ${entries.map(([itemId, count]) => {
+          const item = SHOP_ITEMS.find(x => x.id === itemId);
+          return `
+            <div class="shop-item ${item.rank}">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:26px;">${item.icon}</span>
+                <div><b>${item.name}</b> <small style="color:var(--hoyo-gold);">${item.stars}</small> <small style="color:var(--ac);">x${count}</small><br><small style="color:var(--mu);">${item.desc}</small></div>
+              </div>
+              <button class="pri" style="padding:6px 16px;font-size:13px;" onclick="useItem('${item.id}')">使用</button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `}
+    <button class="pri" style="padding:8px 24px;font-size:14px;margin-top:10px;" onclick="openShopModal()">前往校園福利社</button>
+  `);
+}
+$('btn-bag').onclick = openBagModal;
+
+function useItem(id){
+  const item = SHOP_ITEMS.find(x => x.id === id);
+  if(!item || !G.bag[id]) return;
+  G.bag[id]--;
+  SFX.play('success');
+  item.use();
+  closeModal();
+  renderTurn();
+}
+
+function openShopModal(){
+  SFX.play('click');
+  const costMul = G.talentEffects.costMul || 1.0;
+  openModal(`
+    <h2 style="color:var(--hoyo-gold);">🏪 校園物資福利社</h2>
+    <p style="font-size:13px;color:var(--mu);">目前零用錢存款：<b style="color:var(--hoyo-gold);">$${Math.round(G.s.m).toLocaleString()}</b> 元</p>
+    <div class="shop-grid">
+      ${SHOP_ITEMS.map(item => {
+        const realPrice = Math.round(item.price * costMul);
+        return `
+          <div class="shop-item ${item.rank}">
+            <div>
+              <span style="font-size:24px;">${item.icon}</span> <b>${item.name}</b> <small style="color:var(--hoyo-gold);">${item.stars}</small><br>
+              <small style="color:var(--mu);">${item.desc}</small><br>
+              <b style="color:var(--hoyo-gold);font-size:14px;">$${realPrice}</b>
+            </div>
+            <button class="pri" style="padding:6px 12px;font-size:13px;" onclick="buyItem('${item.id}', ${realPrice})">購買</button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `);
+}
+
+function buyItem(id, price){
+  if(G.s.m < price){
+    showToast('存款不足，無法購買該商品！',I('money'));
+    SFX.play('fail');
+    return;
+  }
+  apply({ m: -price });
+  G.bag[id] = (G.bag[id] || 0) + 1;
+  SFX.play('coin');
+  showToast(`已成功購入！已放入隨身背包！`,I('bag'));
+  openShopModal();
+}
+
+// ─── 月底發票對獎彩蛋 (刮刮樂) ───────────────────────────────
+function runInvoiceLottery(onDone){
+  SFX.play('ding');
+  openModal(`
+    <h2 style="font-size:24px;color:#b91c1c;">🧾 統一發票開獎囉！</h2>
+    <p style="font-size:14px;color:var(--mu);">月底對獎小確幸！這兩個月累積的發票是否能中獎呢？</p>
+    
+    <div class="lottery-box">
+      <div style="font-size:13px;letter-spacing:2px;">SPECIAL PRIZE</div>
+      <div class="lottery-num" id="lottery-disp">???? ????</div>
+      <button class="pri" id="lottery-btn" style="background:#dc2626;padding:10px 32px;font-size:16px;">點擊開獎！</button>
+    </div>
+  `, false);
+
+  $('lottery-btn').onclick = () => {
+    $('lottery-btn').disabled = true;
+    const r = Math.random();
+    let win = 0, msg = '';
+    
+    if(r < 0.08){
+      win = 5000;
+      msg = '🎉 天選之子！中了發票特獎 $5,000 元！';
+      SFX.play('jackpot');
+    } else if(r < 0.25){
+      win = 1000;
+      msg = '🎊 太讚了！中了發票三獎 $1,000 元！';
+      SFX.play('coin');
+    } else if(r < 0.65){
+      win = 200;
+      msg = '✨ 幸運小確幸！中了六獎 $200 元！';
+      SFX.play('coin');
+    } else {
+      win = 0;
+      msg = '沒對中～不過咪寶給了你一個療癒的蹭蹭🐾';
+      SFX.play('meow');
+    }
+
+    $('lottery-disp').textContent = `${Math.floor(1000+Math.random()*9000)} ${Math.floor(1000+Math.random()*9000)}`;
+    if(win > 0) apply({ m: win });
+
+    setTimeout(() => {
+      openModal(`
+        <h2>開獎結果</h2>
+        <p style="font-size:18px;margin:16px 0;font-weight:bold;color:var(--ac);">${msg}</p>
+        <button class="pri" style="padding:10px 32px;" onclick="closeModal(); (${onDone})();">進入生活結算</button>
+      `, false);
+    }, 600);
+  };
+}
+
+// 通用 Modal 控制
+function openModal(contentHtml, showClose=true){
+  $('modal-body').innerHTML = contentHtml;
+  $('modal-close').classList.toggle('hid', !showClose);
+  $('modal-layer').classList.remove('hid');
+}
+function closeModal(){
+  $('modal-layer').classList.add('hid');
+}
+$('modal-close').onclick = closeModal;
+
+// ─── 核心行動執行 ─────────────────────────────────────────────
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const RX = {
+  hobby: [
+    ['練習到手指產生肌肉記憶，進步比預期快！','全神貫注做出了一件滿意的社團作品。'],
+    ['今天練習一直卡關抓不到要領。','靈感短暫枯竭，決定先休息沈澱。']
+  ],
+  play: [
+    ['夜市排隊美食超滿足，心情舒暢萬分！','和朋友暢快玩樂，壓力一掃而空！'],
+    ['雖然玩得很盡興，但荷包扁了一圈。','玩得稍微有點太晚，回程有點疲累。']
+  ],
+  sport: [
+    ['慢跑流了一身大汗，通體舒暢！','運動過後大腦格外清醒敏銳。'],
+    ['今天體力略顯不足，稍微跑一下就喘了。','稍微有點拉到肌肉，提早收操。']
+  ],
+  social: [
+    ['和新認識的朋友相談甚歡，交換了聯絡方式！','大家聊得非常投緣，彼此建立了深厚默契。'],
+    ['彼此還不太熟悉，話題稍嫌尷尬。','有些拘謹，沒能完全放開暢聊。']
+  ]
+};
+
+function act(k){
+  const a = A[k];
+  if(a.c > 0 && G.e < a.c) return;
+  if(a.c > 0) G.e -= a.c;
+
+  // 學業：抽專屬系所題庫
+  if(k === 'study'){
+    return studyQuiz();
+  }
+  // 打工：小遊戲
+  if(k === 'work'){
+    return miniGame();
+  }
+
+  const b4 = { ...G.s };
+  let w = ok(a);
+  if(!w && G.bagBuffs.failImmune){
+    w = true;
+    G.bagBuffs.failImmune = false;
+    showToast('轉運御守發揮神力，免除了一次失敗！',I('gift'));
+  }
+
+  apply(w ? a.fx : (a.bad || a.fx));
+
+  if(k === 'play'){
+    let cost = G.r === 0 ? 250 : 200;
+    if(G.talentEffects.costMul) cost = Math.round(cost * G.talentEffects.costMul);
+    apply({ m: -cost });
+  }
+
+  if(k === 'sport' && G.talentEffects.sportHealth){
+    apply({ h: G.talentEffects.sportHealth });
+  }
+
+  G.log = `${a.n}：` + pick(RX[k][w ? 0 : 1]);
+  renderTurn();
+  showFloat(k, b4);
+  if(w){ SFX.play('success'); flash('happy'); }
+  else { SFX.play('fail'); flash('tired'); }
+}
+
+// 學業問答
+function studyQuiz(){
+  const pool = QUIZ[G.major] || QUIZ.cs;
+  const q = pool[Math.floor(Math.random() * pool.length)];
+  const b4 = { ...G.s };
+  const studyMul = G.talentEffects.studyMul || 1.0;
+
+  card({
+    t: '課堂隨堂測驗 · 學業',
+    x: q[0],
+    c: q[1].map((opt, idx) => ({
+      t: opt,
+      cb: () => {
+        const isAuto = G.bagBuffs.autoStudySuccess;
+        if(isAuto) G.bagBuffs.autoStudySuccess = false;
+
+        if(idx === q[2] || isAuto){
+          const gainK = Math.round(6 * studyMul);
+          apply({ k: gainK, st: 4 });
+          SFX.play('great');
+          flash('happy');
+          card({
+            t: '回答正確！',
+            x: `觀念清晰！教授讚許地對你點頭，學識大幅增長（學識+${gainK}，壓力+4）。`,
+            c: [{ t: '回到校園', cb: () => { G.log = '課堂隨堂測驗答對，收穫良多！'; renderTurn(); showFloat('study', b4); } }]
+          });
+        } else {
+          apply({ k: 2, st: 8 });
+          SFX.play('fail');
+          flash('anxious');
+          card({
+            t: '回答錯誤...',
+            x: `正確答案應為「${q[1][q[2]]}」。課堂進度需要再花時間複習（學識+2，壓力+8）。`,
+            c: [{ t: '回到校園', cb: () => { G.log = '隨堂題目選錯，感到有點挫折。'; renderTurn(); showFloat('study', b4); } }]
+          });
+        }
+      }
+    }))
+  });
+}
+
+// 打工小遊戲
+function miniGame(){
+  const g = MG[Math.floor(Math.random() * MG.length)];
+  let rIdx = 0;
+  let totalScore = 0;
+  let running = false;
+  let pos = 15;
+  let dir = 1;
+  let speed = 2.4;
+  let animId = null;
+
+  const rounds = [
+    { name: '第 1 階段：準備與客製點單', desc: '顧客湧入！掌握好調配時機，別手滑！' },
+    { name: '第 2 階段：核心調理與火候掌控', desc: '高溫萃取中！在金黃完美光譜區間果斷停下！' },
+    { name: '第 3 階段：最後出餐與親切微笑', desc: '壓軸大單！抓住最完美的微笑出餐瞬間！' }
+  ];
+
+  function startRound(idx){
+    if(idx >= 3){
+      let basePay = 420 + totalScore * 180;
+      if(G.r === 1) basePay *= 1.1;
+      if(G.talentEffects.workMul) basePay *= G.talentEffects.workMul;
+      if(G.pet.lv >= 3) basePay *= 1.15;
+      const finalPay = Math.round(basePay);
+      
+      const skillGain = totalScore >= 5 ? 2 : 1;
+      const stressGain = totalScore >= 5 ? 2 : 5;
+      apply({ m: finalPay, sk: skillGain, st: stressGain });
+      G.workCount++;
+      SFX.play('coin');
+
+      closeModal();
+      return card({
+        t: `${g.job} · 打工結算`,
+        x: `打工結束！
+總評價星級：${totalScore} / 6 星！
+實領薪資：$${finalPay.toLocaleString()} 元（技能+${skillGain}，壓力+${stressGain}）。
+店長大讚：「這專注度簡直像提瓦特大廚一樣俐落！」`,
+        c: [{ t: '回到校園繼續開拓', cb: () => { G.log = `${g.job}打工大獲好評，獲得滿滿成就感！`; renderTurn(); showFloat('work', { ...G.s, m: G.s.m - finalPay, sk: G.s.sk - skillGain, st: G.s.st - stressGain }); } }]
+      });
+    }
+
+    const cur = rounds[idx];
+    pos = 12 + Math.random() * 20;
+    dir = 1;
+    speed = 2.4 + idx * 0.9;
+
+    const pLeft = 40 + Math.floor(Math.random() * 18);
+    const pWidth = 14;
+    const gLeft = pLeft - 10;
+    const gWidth = pWidth + 20;
+
+    openModal(`
+      <div class="qte-modal">
+        <div class="qte-title">🍳 ${g.job} · QTE 精準工讀</div>
+        <p class="qte-scene">${cur.name}<br><small style="color:var(--mu);">${cur.desc}</small></p>
+        
+        <div class="qte-track-wrap" id="qte-track">
+          <div class="qte-zone-great" style="left:${gLeft}%;width:${gWidth}%;"></div>
+          <div class="qte-zone-perfect" style="left:${pLeft}%;width:${pWidth}%;">✦ PERFECT</div>
+          <div class="qte-cursor" id="qte-cursor" style="left:${pos}%;"></div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button class="qte-hit-btn" id="qte-btn">🔥 停！完美出品！ (點擊或按空白鍵)</button>
+        </div>
+        <div id="qte-feedback" style="font-size:16px;font-weight:700;margin-top:12px;height:24px;"></div>
+      </div>
+    `, false);
+
+    running = true;
+    const cursor = $('qte-cursor');
+    const feedback = $('qte-feedback');
+    const btn = $('qte-btn');
+
+    function loop(){
+      if(!running) return;
+      pos += speed * dir;
+      if(pos >= 96){ pos = 96; dir = -1; }
+      else if(pos <= 4){ pos = 4; dir = 1; }
+      if(cursor) cursor.style.left = pos + '%';
+      animId = requestAnimationFrame(loop);
+    }
+    animId = requestAnimationFrame(loop);
+
+    let hitDone = false;
+    function onHit(){
+      if(!running || hitDone) return;
+      hitDone = true;
+      running = false;
+      cancelAnimationFrame(animId);
+
+      const pR = pLeft + pWidth;
+      const gR = gLeft + gWidth;
+
+      if(pos >= pLeft && pos <= pR){
+        totalScore += 2;
+        if(feedback) feedback.innerHTML = '<span style="color:#fbbf24;text-shadow:0 0 10px #f59e0b;">✦✦ PERFECT! 完美出品！暴擊收益！✦✦</span>';
+        SFX.play('qte_perfect');
+        SFX.play('crit');
+      } else if(pos >= gLeft && pos <= gR){
+        totalScore += 1;
+        if(feedback) feedback.innerHTML = '<span style="color:#38bdf8;">✦ GREAT! 表現良好！順利完成！✦</span>';
+        SFX.play('success');
+      } else {
+        if(feedback) feedback.innerHTML = '<span style="color:#f87171;">✦ 手忙腳亂！稍微有點瑕疵...✦</span>';
+        SFX.play('fail');
+      }
+
+      if(btn) btn.disabled = true;
+
+      setTimeout(() => {
+        startRound(idx + 1);
+      }, 750);
+    }
+
+    if(btn) btn.onclick = onHit;
+    
+    const keyHandler = (e) => {
+      if(e.code === 'Space'){
+        e.preventDefault();
+        onHit();
+        window.removeEventListener('keydown', keyHandler);
+      }
+    };
+    window.addEventListener('keydown', keyHandler);
+  }
+
+  startRound(0);
+}
+
+// ─── 原神風格視覺小說事件系統 ─────────────────────────────
+const NPCN = { kai: '室友阿凱', yu: '社團小雨', boss: '兼職店長' };
+let tw;
+const VN_STATE = { history: [], autoTimer: null, isAuto: false, isHidden: false };
+
+function card({ t, x, c, npc, nm }){
+  show('s-card');
+  G.cp.setMood(mood());
+  const np = $('np');
+  np.innerHTML = '';
+  np.classList.toggle('hid', !npc);
+  if(npc){
+    createPortrait('np', 'npc_' + npc, ['normal', 'happy', 'tired']).setMood(nm || 'normal');
+  }
+  const speaker = npc ? `${t} · ${NPCN[npc]||npc}` : t;
+  $('ct').textContent = speaker;
+  
+  // 紀錄歷史對話
+  VN_STATE.history.push({ speaker, text: x });
+  if(VN_STATE.history.length > 50) VN_STATE.history.shift();
+
+  const cb = $('cb');
+  cb.innerHTML = '';
+  cb.classList.add('hid');
+
+  c.forEach(o => {
+    const b = document.createElement('button');
+    b.innerHTML = `<span>${o.t}</span>` + (o.h ? ` <span class="hint">${o.h}</span>` : '');
+    b.onclick = e => {
+      e.stopPropagation();
+      SFX.play('click');
+      clearTimeout(VN_STATE.autoTimer);
+      o.cb();
+    };
+    cb.appendChild(b);
+  });
+
+  const el = $('cx');
+  clearInterval(tw);
+  let i = 0, done = false;
+  const fin = () => {
+    if(done) return;
+    done = true;
+    clearInterval(tw);
+    el.textContent = x;
+    cb.classList.remove('hid');
+
+    // 自動播放推進
+    if(VN_STATE.isAuto && c && c.length === 1){
+      clearTimeout(VN_STATE.autoTimer);
+      VN_STATE.autoTimer = setTimeout(() => {
+        c[0].cb();
+      }, 2200);
+    }
+  };
+  el.textContent = '';
+  tw = setInterval(() => {
+    el.textContent = x.slice(0, ++i);
+    if(i % 3 === 0) SFX.play('type');
+    if(i >= x.length) fin();
+  }, 22);
+
+  $('vn').onclick = fin;
+}
+
+// 綁定對話框控制鈕 (Log / Auto / Hide)
+const btnLog = $('vn-btn-log');
+const btnAuto = $('vn-btn-auto');
+const btnHide = $('vn-btn-hide');
+const logLayer = $('vn-log-layer');
+const logContent = $('vn-log-content');
+const logClose = $('vn-log-close');
+
+if(btnLog){
+  btnLog.onclick = (e) => {
+    e.stopPropagation();
+    SFX.play('click');
+    if(logContent){
+      logContent.innerHTML = VN_STATE.history.map(item => `
+        <div class="vn-log-item">
+          <b>✦ ${item.speaker}</b><br>
+          <span>${item.text.replace(/\n/g, '<br>')}</span>
+        </div>
+      `).join('');
+    }
+    if(logLayer) logLayer.classList.remove('hid');
+  };
+}
+if(logClose){
+  logClose.onclick = () => {
+    SFX.play('click');
+    if(logLayer) logLayer.classList.add('hid');
+  };
+}
+
+if(btnAuto){
+  btnAuto.onclick = (e) => {
+    e.stopPropagation();
+    SFX.play('click');
+    VN_STATE.isAuto = !VN_STATE.isAuto;
+    btnAuto.style.color = VN_STATE.isAuto ? 'var(--hoyo-gold)' : '#e2e8f0';
+    btnAuto.textContent = VN_STATE.isAuto ? '⏩ 自動中' : '⏩ 自動';
+    showToast(VN_STATE.isAuto ? '已開啟對話自動播放' : '已關閉對話自動播放',I('fast'));
+  };
+}
+
+if(btnHide){
+  btnHide.onclick = (e) => {
+    e.stopPropagation();
+    SFX.play('click');
+    const vn = $('vn');
+    if(!vn) return;
+    vn.style.opacity = '0';
+    vn.style.pointerEvents = 'none';
+    const restore = () => {
+      vn.style.opacity = '1';
+      vn.style.pointerEvents = 'auto';
+      $('s-card').removeEventListener('click', restore);
+    };
+    setTimeout(() => {
+      $('s-card').addEventListener('click', restore);
+    }, 100);
+  };
+}
+
+// 月底生活事件隊列
+function endMonth(){
+  SFX.play('flip');
+  
+  if(G.pet.lv >= 2){
+    const treasures = [
+      { name:'貓貓帶回的私房錢 $300', fx:{ m:300 } },
+      { name:'咪寶撿到學長遺落的提神飲料！', fx:{}, item:'drink' },
+      { name:'咪寶在花圃發現的幸運御守！', fx:{}, item:'amulet' }
+    ];
+    const tr = pick(treasures);
+    if(tr.item) G.bag[tr.item] = (G.bag[tr.item] || 0) + 1;
+    if(tr.fx) apply(tr.fx);
+    showToast(`咪寶散步回來，叼回了：${tr.name}！`,I('cat'));
+  }
+
+  runInvoiceLottery(() => {
+    const n = G.r * 3;
+    G.q = G.ev.slice(n, n + 3);
+
+    if(G.r === 1){
+      if(G.pet.lv >= 4) G.q.push(SPECIAL_EVENTS.pet);
+      else if(G.s.k >= 35) G.q.push(SPECIAL_EVENTS.scholar);
+      else if(G.workCount >= 2) G.q.push(SPECIAL_EVENTS.slasher);
+      else G.q.push(SPECIAL_EVENTS.default);
+    }
+    nextEv();
+  });
+}
+
+function nextEv(){
+  const e = G.q.shift();
+  if(!e) return settle();
+  SFX.play('ding');
+
+  card({
+    t: e.t,
+    x: e.x,
+    npc: e.npc,
+    nm: 'normal',
+    c: e.c.map(c => ({
+      t: c.t,
+      h: hs(c),
+      cb: () => {
+        const w = !c.bad || Math.random() < (c.p || 0.7);
+        apply(w ? c.fx : c.bad);
+        if(c.flag) G.flags[c.flag] = true;
+
+        card({
+          t: e.t,
+          x: w ? c.r : (c.rb || c.r),
+          npc: e.npc,
+          nm: (w && (c.fx?.st||0) <= 2) ? 'happy' : 'tired',
+          c: [{ t: '繼續前進', cb: nextEv }]
+        });
+      }
+    }))
+  });
+}
+
+function settle(){
+  const livingCost = 1400;
+  apply({ m: -livingCost, st: -3 });
+  let broke = false;
+  if(G.s.m < 0){
+    apply({ st: 10 });
+    broke = true;
+  }
+
+  const last = G.r === MON.length - 1;
+  card({
+    t: `${MON[G.r]} 生活結算`,
+    x: `固定日常支出扣除 $${livingCost.toLocaleString()} 元，目前戶頭存款 $${Math.round(G.s.m).toLocaleString()} 元。` +
+       (broke ? '\n⚠️ 警告：存款見底赤字，心理壓力劇烈增加！' : '\n身心經過週末休息，獲得適度沉澱。'),
+    c: [{
+      t: last ? '✦ 查看大一生涯拓荒報告' : '✦ 迎接 10 月新學期',
+      cb: () => {
+        if(last) return ending();
+        G.r++;
+        G.e = G.maxE || 10;
+        G.talentEffects = {};
+        G.log = '10 月新月份開始了，體力已完全恢復！';
+        renderTurn();
+        setTimeout(() => openTalentModal(), 400);
+      }
+    }]
+  });
+}
+
+// ─── 結算與結局判定 (星鐵通關演出) ───────────────────────────
+function ending(){
+  SFX.play('great');
+  const s = G.s;
+  let k = 'balanced';
+
+  if(G.pet.lv >= 5) k = 'cat_master';
+  else if(s.st >= 80) k = 'burnout';
+  else if(s.h >= 75 && s.st < 35) k = 'healthy';
+  else if(s.k >= 40) k = 'scholar';
+  else if(s.m >= 5000 && G.workCount >= 2) k = 'tycoon';
+  else if(s.sk >= 25) k = 'maker';
+
+  const creditsEarned = Math.round((s.k + s.sk + s.h)/3 + (s.m > 0 ? s.m/500 : 0) + G.pet.lv * 15);
+  const oldCredits = parseInt(localStorage.getItem('campus_credits') || '0', 10);
+  const totalCredits = oldCredits + creditsEarned;
+  localStorage.setItem('campus_credits', totalCredits);
+
+  show('s-end');
+  setHTML('end-box', `
+    <div style="font-size:12px;letter-spacing:4px;color:var(--hoyo-gold);margin-bottom:4px;">✦ MISSION ACCOMPLISHED ✦</div>
+    <h1 style="font-size:34px;color:var(--hoyo-gold);margin-bottom:8px;font-weight:900;">大一生活開拓總結算</h1>
+    <h2 style="font-size:24px;margin-bottom:12px;color:var(--ink);">【${END[k][0]}】</h2>
+    <p style="font-size:17px;line-height:1.8;color:var(--ink);max-width:640px;margin:0 auto 20px;">${END[k][1]}</p>
+
+    <div style="background:linear-gradient(90deg,rgba(243,194,98,0.2),rgba(79,120,227,0.2));border:1px solid var(--hoyo-gold);padding:10px 22px;border-radius:99px;display:inline-block;margin-bottom:22px;font-size:15px;">
+      🎖️ 本局獲得星軌學分幣：<b style="color:var(--hoyo-gold);font-size:22px;">+${creditsEarned}</b> 點（累計儲備：${totalCredits} 點）
+    </div>
+
+    <div class="g g4" style="margin-bottom:26px;">
+      <div class="card st k">${I('book')}<br>學識<b>${Math.round(s.k)}</b></div>
+      <div class="card st m">${I('coin')}<br>存款<b>$${Math.round(s.m).toLocaleString()}</b></div>
+      <div class="card st sk">${I('star')}<br>技能<b>${Math.round(s.sk)}</b></div>
+      <div class="card st h">${I('heart')}<br>健康<b>${Math.round(s.h)}</b></div>
+    </div>
+
+    <button class="pri" style="margin:0 auto;padding:14px 54px;" onclick="location.reload()">再開啟下一輪人生 ✦</button>
+  `);
+}
+
+// ─── 開局選角初始化 ───────────────────────────────────────────
+const SEL = {};
+function initSelect(){
+  $('sp-male').innerHTML = '';
+  $('sp-female').innerHTML = '';
+  SEL.male = createPortrait('sp-male', 'char_male');
+  SEL.male.setMood('normal');
+  SEL.female = createPortrait('sp-female', 'char_female');
+  SEL.female.setMood('normal');
+}
+initSelect();
+
+let selG = 'male';
+function selRefresh(hover){
+  const focus = hover || selG;
+  ['male','female'].forEach(g => {
+    const el = $('pick-' + g);
+    const info = document.querySelector(g === 'male' ? '.sel-im' : '.sel-if');
+    const f = g === focus;
+    SEL[g].setMood(f ? 'happy' : 'normal');
+    el.classList.toggle('on', f);
+    el.classList.toggle('dim', Boolean(focus && !f));
+    el.classList.toggle('sel', g === selG);
+    info.classList.toggle('sel', g === selG);
+  });
+}
+selRefresh(null);
+
+['male','female'].forEach(g => {
+  const el = $('pick-' + g);
+  const info = document.querySelector(g === 'male' ? '.sel-im' : '.sel-if');
+  const pick = () => {
+    selG = g;
+    SFX.play('click');
+    selRefresh(null);
+  };
+  el.onpointerenter = info.onpointerenter = () => selRefresh(g);
+  el.onpointerleave = info.onpointerleave = () => selRefresh(null);
+  el.onclick = info.onclick = pick;
+});
+
+function bindBtnGroup(groupId){
+  const box = $(groupId);
+  if(!box) return;
+  box.onclick = e => {
+    const btn = e.target.closest('.f-btn');
+    if(!btn) return;
+    SFX.play('click');
+    box.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+}
+bindBtnGroup('grp-wealth');
+bindBtnGroup('grp-pers');
+
+// 開始遊戲大按鈕
+$('startBtn').onclick = () => {
+  SFX.init();
+  SFX.play('great');
+
+  const wealth = document.querySelector('#grp-wealth .f-btn.active')?.dataset.v || 'middle';
+  const startMoney = wealth === 'poor' ? 5000 : (wealth === 'rich' ? 40000 : 15000);
+  const major = $('inp-major').value || 'cs';
+  const pers = document.querySelector('#grp-pers .f-btn.active')?.dataset.v || 'outgoing';
+
+  G = {
+    gender: selG,
+    name: $('inp-name').value || '新生同學',
+    major,
+    pers,
+    r: 0,
+    e: 10,
+    maxE: 10,
+    workCount: 0,
+    flags: {},
+    bag: { drink: 1 },
+    bagBuffs: {},
+    talentEffects: {},
+    currentTalent: null,
+    pet: { name:'咪寶', lv:1, love:30 },
+    log: '✦ 新學期伊始，先來決定第一個月的校園規劃吧！',
+    s: { k: 20, m: startMoney, sk: 10, h: 70, st: 25 }
+  };
+  G.ev = [...EV].sort(() => Math.random() - 0.5);
+
+  $('pp').innerHTML = '';
+  G.pp = createPortrait('pp', 'char_' + selG);
+  $('cp').innerHTML = '';
+  G.cp = createPortrait('cp', 'char_' + selG);
+
+  renderTurn();
+
+  // 9月初第一次躍遷天賦
+  setTimeout(() => openTalentModal(), 350);
+};
+
+show('s-start');
+</script>
+</body>
+</html>
